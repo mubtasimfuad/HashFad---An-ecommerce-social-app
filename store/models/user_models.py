@@ -27,7 +27,7 @@ class Vendor(Address):
     nid = models.CharField(max_length=25)
     licence_id = models.CharField(max_length=25, blank=True,null=True)
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vendor_set")
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):

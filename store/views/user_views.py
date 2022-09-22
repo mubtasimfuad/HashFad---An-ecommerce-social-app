@@ -3,7 +3,7 @@ from store.serializers import CustomerSerializer, VendorCreateSerializer, Vendor
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework import status
-
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -35,9 +35,10 @@ class VendorViewSet(ModelViewSet):
 
 
 
-class CustomerViewSet(CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+class CustomerViewSet(ModelViewSet):
     serializer_class = CustomerSerializer
     queryset= Customer.objects.all()
+    permission_classes =  [IsAdminUser]
     
     
     def create(self, request, *args, **kwargs):
@@ -46,10 +47,16 @@ class CustomerViewSet(CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, Ge
         if isVendor:
             return Response({"Multiple User Profile": "Can't create a customer profile with the same id of vendor"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         return super().create(request, *args, **kwargs)
-
-    @action(detail=False,url_path='profile', methods=["GET","PUT"])
+        
+    @action(detail=False,url_path='profile', methods=["GET","PUT","PATCH"], permission_classes=[IsAuthenticated])
     def get_user_profile(self,request):
+        
         customer = Customer.objects.get(user_id=request.user.id)
-        serializer = CustomerSerializer(customer)
-        return Response(serializer.data)
-            
+        if request.method == 'GET':
+            serializer = CustomerSerializer(customer)
+            return Response(serializer.data)
+        if request.method == "PUT" or "PATCH":
+            serializer = CustomerSerializer(customer, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)

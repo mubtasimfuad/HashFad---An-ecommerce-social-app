@@ -45,14 +45,14 @@ def _get_image_field_color(self,validated_data=None):
         return color
         
    
-def _get_image_field_color(validated_data):
+def _get_image_field_color(data):
         color = ""
-        
+
         try:
-            image_file = validated_data['image']
+            image_file = data['image']
         except:
-            image_file=validated_data
-            
+            image_file=data
+        
         
         if image_file:
             alpha = "hexa"

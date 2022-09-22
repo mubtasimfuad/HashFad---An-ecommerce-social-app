@@ -14,23 +14,41 @@ class CategorySerializer(serializers.ModelSerializer):
         fields='__all__'
 
 class ProductVariationSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = ProductVariation
         fields = '__all__'
-      
+        none_to_str_fields = ('color', )
+    def get_fields(self):
+        fields = super().get_fields()
+        fields['product'].queryset = Product.objects.filter(vendor__user__id=self.context["request"].user.id)
+        return fields
+
     def validate(self, attrs):
-        if attrs['color'] is None or "":
+        if attrs['color'] == "":
             attrs['color']= pil._get_image_field_color(attrs)
         return super().validate(attrs)
-        
+
+    # def create(self, validated_data):
+    #     if validated_data['color'] == "":
+    #         validated_data['color']= pil._get_image_field_color(validated_data)
+    #         return super().create(validated_data)
+    #     return super().create(validated_data)
+    # def update(self, instance, validated_data):
+    #     # if validated_data['color'] is None or "":
+    #     validated_data['color'] = pil._get_image_field_color(instance.image)
+    #     return super().update(instance, validated_data)
     
     
        
 
 class ProductSerializer(serializers.ModelSerializer):
+    variation = ProductVariationSerializer(source='variations',
+                                  many=True, read_only=True)
+    
     class Meta:
         model = Product
-        fields = ['id','vendor','title', 'description', 'price', 'featured_image', 'is_available','category','stock','total_variation',]
+        fields = ['id','vendor','title', 'description', 'price', 'featured_image', 'is_available','category','stock','total_variation','slug','variation']
     
     stock = serializers.IntegerField(read_only=True)
     total_variation = serializers.IntegerField(read_only=True)
