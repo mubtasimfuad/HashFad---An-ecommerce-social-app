@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 from django.db import models
 from django.conf import settings
 from django.contrib import admin
@@ -51,6 +52,9 @@ class Customer(Address):
         return f'{self.user.first_name} {self.user.last_name}'
 
     def save(self, *args, **kwargs):
+        # isVendor = Vendor.objects.get(user=self.user.id)
+        # if isVendor:
+        #     raise PermissionError("Can't create a customer profile with the same id of vendor")
         if not self.id:
             self.username = 'c'+_current_year+str(self.user.id)+"-"+slugify(self.user.first_name)+slugify(self.user.last_name)
         return super().save(*args, **kwargs)

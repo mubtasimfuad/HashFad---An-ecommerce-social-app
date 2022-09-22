@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -148,6 +149,10 @@ REST_FRAMEWORK = {
 }
 SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('JWT',),
+   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+
 }
 
 AUTH_USER_MODEL = 'account.Account'
+
+# eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjYzODU3MzIxLCJqdGkiOiI4NmUyODgxZTk2YmE0MTU0YjY0NzU3ZTc1YzhjYzNiOCIsInVzZXJfaWQiOjF9.lGjeRKjbulB6870AwHVc3lEDy_ebpoyOhKmzDWJdx4A

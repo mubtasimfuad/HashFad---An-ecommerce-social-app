@@ -47,6 +47,9 @@ class CategoryViewSet(ModelViewSet):
 
 class ReviewRatingViewSet(ModelViewSet):
     serializer_class = ReviewRatingSerializer
+    def get_serializer_context(self):
+        context = { "product_pk": self.kwargs['product_pk'], 'request': self.request}
+        return context
 
     def get_queryset(self):
         product_id=  self.kwargs['product_pk']
