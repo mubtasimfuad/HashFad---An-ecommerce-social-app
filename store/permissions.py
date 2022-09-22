@@ -31,6 +31,15 @@ class IsProductVendor(permissions.BasePermission):
             
             if request.user.id == obj.vendor.user.id:
                 return True
+class IsAuthor(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if view.action == "retrieve":
+            return True
+        if view.action in ['update', 'partial_update','destroy']:
+            
+            if request.user.id == obj.user.id:
+                return True
+
        
        
         

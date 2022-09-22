@@ -1,12 +1,14 @@
 from django.db.models import Sum, Count
 from store import pil, serializers
+from django.db.models import Q
+
 from store.models.product_models import Category, Product, ProductVariation, Query, ReviewRating
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
-
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView, ListCreateAPIView, GenericAPIView
-from store.permissions import IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
+from store.permissions import IsAuthor, IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
 from store.serializers import CategorySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer
 
  #@api_view()
@@ -72,6 +74,7 @@ class CategoryViewSet(ModelViewSet):
 
 class ReviewRatingViewSet(ModelViewSet):
     serializer_class = ReviewRatingSerializer
+    permission_classes=[IsAuthenticatedOrReadOnly, IsAuthor]
     def get_serializer_context(self):
         context = { "product_pk": self.kwargs['product_pk'], 'request': self.request}
         return context
@@ -84,10 +87,15 @@ class ReviewRatingViewSet(ModelViewSet):
    
 class QueryViewSet(ModelViewSet):
     serializer_class = QuerySerializer
+    permission_classes=[IsAuthenticatedOrReadOnly, IsAuthor]
+
+    def get_serializer_context(self):
+        context = { "product_pk": self.kwargs['product_pk'], 'request': self.request}
+        return context
 
     def get_queryset(self):
         product_id=  self.kwargs['product_pk']
-        queryset = Query.objects.filter(product=product_id)
+        queryset = Query.objects.filter(Q(query=None) & Q(product=product_id))
         return queryset
     
 

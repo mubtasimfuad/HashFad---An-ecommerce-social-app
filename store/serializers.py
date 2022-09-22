@@ -55,14 +55,16 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class ReviewRatingSerializer(serializers.ModelSerializer):
     class Meta:
+        
         model= ReviewRating
-        fields = ['user','subject', 'review', 'rating']
+        fields = ["product_id","user_id",'subject', 'review', 'rating']
+        read_only_fields = ["product_id","user_id",]
 
     def validate(self, attrs):
-        if "product" not in attrs:
-            attrs["product_id"] = int(self.context["product_pk"])
+        attrs["product_id"] = int(self.context["product_pk"])
+        attrs["user_id"] = int(self.context["request"].user.id)
 
-            return attrs
+        return attrs
    
         
     # def validated_data(self):
@@ -72,10 +74,30 @@ class ReviewRatingSerializer(serializers.ModelSerializer):
     #     return validated_data
 
 class QuerySerializer(serializers.ModelSerializer):
+  
+    sub_query = serializers.SerializerMethodField(
+        read_only=True, method_name="get_child_query")
+
     class Meta:
         model= Query
-        fields = ['product','user', 'body']
+        fields = ['id',"query",'product_id','user_id', 'body', "sub_query", ]
+        read_only_fields = ["product_id","user_id",]
+    
+        
+   
+    def validate(self, attrs):
+        attrs["product_id"] = int(self.context["product_pk"])
+        attrs["user_id"] = int(self.context["request"].user.id)
 
+        return attrs
+    def get_child_query(self, obj):
+        """ self referral field """
+        serializer = QuerySerializer(
+            instance=obj.query_reply.all(),
+            many=True
+        )
+        return serializer.data
+   
 
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
