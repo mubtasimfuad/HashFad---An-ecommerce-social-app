@@ -1,10 +1,12 @@
 
+from decimal import Decimal
+from itertools import product
 from . import pil
 from rest_framework import serializers
 from rest_framework import status
 from rest_framework.response import Response
 
-from store.models.product_models import Product, ProductVariation, Category, Query, ReviewRating
+from store.models.product_models import Cart, CartItem, Product, ProductVariation, Category, Query, ReviewRating
 from store.models.user_models import *
 
 
@@ -127,6 +129,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         model = Customer
         fields= ['id', 'user_id','username', 'birth_date', 'address', 'city','district','phone1','phone2']
         read_only_fields = ('user_id',)
+
     # def create(self, validated_data):
     #     user_id = validated_data["user"]
     #     isVendor = Vendor.objects.get(user=user_id)
@@ -134,12 +137,37 @@ class CustomerSerializer(serializers.ModelSerializer):
     #         return Response({"Multiple User Profile": "Can't create a customer profile with the same id of vendor"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     #     return super().create(validated_data)
 
-   
-    
-   
+class ProductVariationCartSerializer(serializers.ModelSerializer):
+     product = serializers.StringRelatedField()
+     class Meta:
+        model = ProductVariation
+        fields = ['product','image','unit_price_with_tax','color','size']
+     unit_price_with_tax = serializers.SerializerMethodField()
+
+     def get_unit_price_with_tax(self,object:ProductVariation):
+        return object.price_after_add
 
 
-   
-    # def get_stock(self, object: Product):
-    #     return object.get_stock
+
+class CartItemSerializer(serializers.ModelSerializer):
+    total_price = serializers.SerializerMethodField()
+    product = ProductVariationCartSerializer(read_only=True)
+
+    def get_total_price(self, object):
+        return round(object.quantity * Decimal(object.product.price_after_add),3)
+
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'quantity', 'total_price']
     
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(read_only=True, many=True)
+    grand_total = serializers.SerializerMethodField()
+    
+    def get_grand_total(self,object:Cart):
+        return sum([round((item.quantity * item.product.price_after_add),3) for item in object.items.all()])
+    class Meta:
+        model= Cart
+        fields = ['id','items', 'grand_total']
+        read_only_fields = ['id']

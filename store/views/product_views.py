@@ -2,14 +2,16 @@ from django.db.models import Sum, Count
 from store import pil, serializers
 from django.db.models import Q
 
-from store.models.product_models import Category, Product, ProductVariation, Query, ReviewRating
+from store.models.product_models import Cart, CartItem, Category, Product, ProductVariation, Query, ReviewRating
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, ListModelMixin, DestroyModelMixin
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView, ListCreateAPIView, GenericAPIView
 from store.permissions import IsAdminOrReadOnly, IsAuthor, IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
-from store.serializers import CategorySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer
+from store.serializers import CategorySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, CartSerializer
 
  #@api_view()
 # def product_list(request):
@@ -89,5 +91,14 @@ class QueryViewSet(ModelViewSet):
         product_id=  self.kwargs['product_pk']
         queryset = Query.objects.filter(Q(query=None) & Q(product=product_id))
         return queryset
+
+
+class CartViewSet(CreateModelMixin,RetrieveModelMixin,DestroyModelMixin, GenericViewSet):
+    serializer_class = CartSerializer
+    queryset = Cart.objects.all()
     
+class CartItemViewSet(ModelViewSet):
+    serializer_class = CartSerializer
+    queryset = CartItem.objects.all()
+
 

@@ -5,6 +5,7 @@ from store import pil
 from store.models.user_models import Vendor, Customer
 from django.core.validators import MinValueValidator
 from uuid import uuid4
+from decimal import Decimal
 
 class Category(models.Model):
     title = models.CharField(max_length=50, unique=True)
@@ -40,7 +41,7 @@ class Product(models.Model):
         ordering = ('-modified_at',)
 
     def __str__(self) -> str:
-        return self.title + self.vendor.store_name
+        return self.title 
     # @property
     # def get_stock(self):
     #     stock = ProductVariation.objects.filter(product=self.id).prefetch_related('product').aggregate(Sum('stock'))['stock__sum']
@@ -70,6 +71,13 @@ class ProductVariation(models.Model):
             self.color = pil._get_image_field_color(self)
         
         return super().save(*args, **kwargs)
+    @property
+    def tax(self):
+        return (self.product.price + self.added_price)* Decimal(0.2)
+    @property
+    def price_after_add(self):
+        return self.product.price + self.added_price +self.tax
+
 
     def __str__(self):
         return self.product.title 
@@ -101,6 +109,10 @@ class Query(models.Model):
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def grand_total(self):
+        sum([round((item.quantity * item.product.price_after_add),3) for item in self.items.all()])
 
 
 class CartItem(models.Model):
