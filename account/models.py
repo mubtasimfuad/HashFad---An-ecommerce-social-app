@@ -12,6 +12,9 @@ class MyAccountManger(BaseUserManager):
             raise ValueError("User must provide a last_name")
         if not user_type:
             raise ValueError("User must provide a user type")
+        if not password:
+            raise ValueError("User must provide a password")
+        
         
         
 
@@ -58,7 +61,7 @@ USER_CHOICES = [
 class Account(AbstractBaseUser):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    email = models.CharField(unique=True, max_length=100)
+    email = models.EmailField(unique=True, max_length=100)
     user_type = models.CharField(max_length=25,choices=USER_CHOICES)
     # gender = models.CharField(choices=GENDER_CHOICES,max_length=8,  default='other')
 

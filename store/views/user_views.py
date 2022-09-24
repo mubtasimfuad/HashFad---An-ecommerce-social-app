@@ -1,4 +1,5 @@
 from store.models.user_models import Customer, Vendor
+from store.permissions import IsAnonymousUser
 from store.serializers import CustomerSerializer, VendorCreateSerializer, VendorBaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 
 class VendorViewSet(ModelViewSet):
     queryset= Vendor.objects.all()
+    permission_classes = [IsAnonymousUser]
     lookup_field="username"
     lookup_url_kwarg="username"
     serializer_classes = {
@@ -38,7 +40,7 @@ class VendorViewSet(ModelViewSet):
 class CustomerViewSet(ModelViewSet):
     serializer_class = CustomerSerializer
     queryset= Customer.objects.all()
-    permission_classes =  [IsAdminUser]
+    permission_classes = [IsAnonymousUser]
     
     
     def create(self, request, *args, **kwargs):

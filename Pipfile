@@ -9,8 +9,8 @@ pillow = "*"
 django-debug-toolbar = "*"
 drf-nested-routers = "*"
 django-phonenumber-field = {extras = ["phonenumberslite"], version = "*"}
-djoser = "*"
 djangorestframework-simplejwt = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

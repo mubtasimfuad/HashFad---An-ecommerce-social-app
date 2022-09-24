@@ -6,9 +6,9 @@ from store.models.product_models import Category, Product, ProductVariation, Que
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView, ListCreateAPIView, GenericAPIView
-from store.permissions import IsAuthor, IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
+from store.permissions import IsAdminOrReadOnly, IsAuthor, IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
 from store.serializers import CategorySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer
 
  #@api_view()
@@ -70,6 +70,7 @@ class VariationViewSet(ModelViewSet):
 class CategoryViewSet(ModelViewSet):
     serializer_class=CategorySerializer
     queryset =  Category.objects.all()
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class ReviewRatingViewSet(ModelViewSet):

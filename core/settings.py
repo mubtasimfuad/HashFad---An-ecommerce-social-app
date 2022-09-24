@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from django.core.mail.backends.console import EmailBackend
+import os 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-thx9o4$=t&6*j^*1^t9ekx8i9x%&tuceuhf1)3j*8$6#4idnn!'
+SECRET_KEY = "django-insecure-thx9o4$=t&6*j^*1^t9ekx8i9x%&tuceuhf1)3j*8$6#4idnn!"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -43,7 +45,6 @@ INSTALLED_APPS = [
     #Third Party App
     'rest_framework',
     "debug_toolbar",
-    'djoser',
     'phonenumber_field',
 ]
 
@@ -141,6 +142,7 @@ INTERNAL_IPS = [
     # ...
 ]
 REST_FRAMEWORK = {
+    
     'COERCE_DECIMAL_TO_STRING': False,
     # Your other settings
      'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -153,6 +155,19 @@ SIMPLE_JWT = {
 
 }
 
+SITE_NAME = "HashFad- A Social Shopping App"
+
 AUTH_USER_MODEL = 'account.Account'
 
 # eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjYzODU3MzIxLCJqdGkiOiI4NmUyODgxZTk2YmE0MTU0YjY0NzU3ZTc1YzhjYzNiOCIsInVzZXJfaWQiOjF9.lGjeRKjbulB6870AwHVc3lEDy_ebpoyOhKmzDWJdx4A
+
+EMAIL_USE_TLS =True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "hashfad.info@gmail.com"
+EMAIL_HOST_PASSWORD = "exjwkxhkxogiarni"
+
+
+
+
+
