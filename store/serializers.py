@@ -48,10 +48,17 @@ class ProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id','vendor','title', 'description', 'price', 'featured_image', 'is_available','category','stock','total_variation','slug','variation']
+        fields = ['id','vendor_id','title', 'description', 'price', 'featured_image', 'is_available','category','stock','total_variation','slug','variation']
     
     stock = serializers.IntegerField(read_only=True)
     total_variation = serializers.IntegerField(read_only=True)
+    read_only_fields = ["vendor_id"]
+
+    def validate(self, attrs):
+
+
+        attrs['vendor_id'] = int(self.context["request"].user.vendor_set.id)
+        return attrs
 
 class ReviewRatingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -113,6 +120,7 @@ class VendorBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
         fields= ['id', 'user_id','username', 'store_name', 'birth_date', 'nid', 'licence_id','address', 'city','district','phone1','phone2']
+
 class CustomerSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(read_only=True)
     class Meta:

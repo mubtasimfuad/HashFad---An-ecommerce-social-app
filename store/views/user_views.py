@@ -1,8 +1,8 @@
 from store.models.user_models import Customer, Vendor
-from store.permissions import IsAnonymousUser
+from store.permissions import IsAdminOrReadOnly, IsAnonymousUser
 from store.serializers import CustomerSerializer, VendorCreateSerializer, VendorBaseSerializer
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, ListModelMixin
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.decorators import action
@@ -37,10 +37,10 @@ class VendorViewSet(ModelViewSet):
 
 
 
-class CustomerViewSet(ModelViewSet):
+class CustomerViewSet(CreateModelMixin,ListModelMixin,GenericViewSet):
     serializer_class = CustomerSerializer
     queryset= Customer.objects.all()
-    permission_classes = [IsAnonymousUser]
+    permission_classes = [IsAdminOrReadOnly]
     
     
     def create(self, request, *args, **kwargs):

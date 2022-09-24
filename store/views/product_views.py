@@ -32,6 +32,11 @@ class ProductViewSet(ModelViewSet):
             queryset =  queryset.filter(category__id=category_id)
 
         return queryset
+
+    def get_serializer_context(self):
+        context = { 'request': self.request}
+        return context
+
     def update(self, request, *args, **kwargs):
         
         return super().update(request, *args, **kwargs)
@@ -44,16 +49,6 @@ class VariationViewSet(ModelViewSet):
         context = super().get_context_data(**kwargs)
         context["request"] = self.request 
         return context
-   
-   
-    # def create(self, request, *args, **kwargs):
-    #     queryset = ProductVariation.objects.filter(product__vendor__user__id=self.request.user.id)
-    #     serializer = ProductVariationSerializer(queryset, many=True)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
-       
 
     def get_queryset(self):
     
@@ -64,14 +59,10 @@ class VariationViewSet(ModelViewSet):
 
         return queryset
     
-
-    
-    
 class CategoryViewSet(ModelViewSet):
     serializer_class=CategorySerializer
     queryset =  Category.objects.all()
     permission_classes = [IsAdminOrReadOnly]
-
 
 class ReviewRatingViewSet(ModelViewSet):
     serializer_class = ReviewRatingSerializer

@@ -1,4 +1,5 @@
 from django.db import models
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
@@ -85,3 +86,10 @@ class Account(AbstractBaseUser):
 
     def has_module_perms(self, add_label):
         return True
+
+    def tokens(self):
+        refresh = RefreshToken.for_user(self)
+        tokens={ 'refresh': str(refresh),
+            'access': str(refresh.access_token)}
+        
+        return tokens

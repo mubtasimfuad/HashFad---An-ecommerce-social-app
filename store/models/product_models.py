@@ -3,7 +3,8 @@ from django.db.models import Sum
 from django.conf import settings
 from store import pil
 from store.models.user_models import Vendor, Customer
-
+from django.core.validators import MinValueValidator
+from uuid import uuid4
 
 class Category(models.Model):
     title = models.CharField(max_length=50, unique=True)
@@ -96,5 +97,60 @@ class Query(models.Model):
 
     def __str__(self):
         return self.body[:30]
+
+class Cart(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(
+        Cart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(ProductVariation, on_delete=models.CASCADE)
+    quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
+
+    class Meta:
+        unique_together = [['cart', 'product']]
+
+class Order(models.Model):
+    PENDING_STATUS = 'pending'
+    SUCCESSFUL_STATUS = 'successful'
+    FAILED_STATUS = 'failed'
+    #############################
+    PROCESSING_STATUS = 'processing'
+    SHIPPED_STATUS = 'shipped'
+    DELIVERED_STATUS = 'delivered'
+    REUTRNED_STATUS = 'returned'
+
+
+    PAYMENT_STATUS_CHOICES = [
+        (PENDING_STATUS, 'Pending'),
+        (SUCCESSFUL_STATUS, 'Successful'),
+        (FAILED_STATUS, 'Failed'),
+    ]
+    
+    DELIVERY_STATUS_CHOICES = [
+        (PROCESSING_STATUS, 'Processing'),
+        (SHIPPED_STATUS, 'Shipped'),
+        (DELIVERED_STATUS, 'Delivered'),
+        (REUTRNED_STATUS, 'Returned'),
+
+    ]
+
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    placed_at = models.DateTimeField(auto_now_add=True)
+    delivery_status = models.CharField(
+        max_length=25, choices=DELIVERY_STATUS_CHOICES, default=PENDING_STATUS)
+    payment_status = models.CharField(
+        max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PROCESSING_STATUS)
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    product = models.ForeignKey(
+        ProductVariation, on_delete=models.PROTECT)
+    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
+    quantity = models.PositiveSmallIntegerField()
+
 
     

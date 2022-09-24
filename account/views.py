@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
 from rest_framework.response import Response
 from account.models import Account
-from account.serializers import EmailVerificationSerializer, RegisterSerializer
+from account.serializers import EmailVerificationSerializer, SignInSerializer, SignUpSerializer
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import Util
@@ -19,7 +19,7 @@ from django.conf import settings
 
 class RegisterView(generics.GenericAPIView):
 
-    serializer_class = RegisterSerializer
+    serializer_class = SignUpSerializer
 
     def post(self, request):
         user = request.data
@@ -42,6 +42,7 @@ class RegisterView(generics.GenericAPIView):
         Util.send_email(data)
        
         return Response(user_data, status=status.HTTP_201_CREATED)
+
 class VerifyEmail(views.APIView):
       serializer_class = EmailVerificationSerializer
       def get(self, request):
@@ -61,3 +62,11 @@ class VerifyEmail(views.APIView):
 
         except jwt.exceptions.DecodeError as ex:
             return Response({'error': "Invalid Token "}, status=status.HTTP_202_ACCEPTED)
+
+class SignInAPIView(generics.GenericAPIView):
+    serializer_class = SignInSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
