@@ -88,8 +88,8 @@ class Account(AbstractBaseUser):
         return True
 
     def tokens(self):
-        refresh = RefreshToken.for_user(self)
-        tokens={ 'refresh': str(refresh),
-            'access': str(refresh.access_token)}
+        refresh_token = RefreshToken.for_user(self)
+        tokens={ 'refresh': str(refresh_token),
+            'access': str(refresh_token.access_token)}
         
         return tokens
