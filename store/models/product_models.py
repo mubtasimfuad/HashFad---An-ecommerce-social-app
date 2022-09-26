@@ -106,7 +106,7 @@ class Query(models.Model):
     def __str__(self):
         return self.body[:30]
 
-class Cart(models.Model):
+class Basket(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -115,54 +115,64 @@ class Cart(models.Model):
         sum([round((item.quantity * item.product.price_after_add),3) for item in self.items.all()])
 
 
-class CartItem(models.Model):
-    cart = models.ForeignKey(
-        Cart, on_delete=models.CASCADE, related_name='items')
+class BasketItem(models.Model):
+    basket = models.ForeignKey(
+        Basket, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(ProductVariation, on_delete=models.CASCADE)
     quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
 
     class Meta:
-        unique_together = [['cart', 'product']]
+        unique_together = [['basket', 'product']]
 
 class Order(models.Model):
-    PENDING_STATUS = 'pending'
-    SUCCESSFUL_STATUS = 'successful'
-    FAILED_STATUS = 'failed'
-    #############################
-    PROCESSING_STATUS = 'processing'
-    SHIPPED_STATUS = 'shipped'
-    DELIVERED_STATUS = 'delivered'
-    REUTRNED_STATUS = 'returned'
-
-
-    PAYMENT_STATUS_CHOICES = [
-        (PENDING_STATUS, 'Pending'),
-        (SUCCESSFUL_STATUS, 'Successful'),
-        (FAILED_STATUS, 'Failed'),
-    ]
+    PENDING_PAYMENT_STATUS = 'pending'
+    SUCCESSFUL_PAYMENT_STATUS = 'successful'
+    FAILED_PAYMENT_STATUS = 'failed'
     
-    DELIVERY_STATUS_CHOICES = [
-        (PROCESSING_STATUS, 'Processing'),
-        (SHIPPED_STATUS, 'Shipped'),
-        (DELIVERED_STATUS, 'Delivered'),
-        (REUTRNED_STATUS, 'Returned'),
+    PENDING_DELIVERY_STATUS = 'pending'
+    PROCESSING_DELIVERY_STATUS = 'processing'
+    SHIPPED_DELIVERY_STATUS = 'shipped'
+    DELIVERED_DELIVERY_STATUS = 'delivered'
+    REUTRNED_DELIVERY_STATUS = 'returned'
 
+    CASH_ON_DELIVERY ="cod"
+    ONLINE_PAYMENT = "op"
+    #############################
+    PAYMENT_STATUS_CHOICES = [
+        (PENDING_PAYMENT_STATUS, 'Pending'),
+        (SUCCESSFUL_PAYMENT_STATUS, 'Successful'),
+        (FAILED_PAYMENT_STATUS, 'Failed'),
     ]
+    PAYMENT_METHOD_CHOICES= [
+        (CASH_ON_DELIVERY, 'Cash On Delivery'),
+        (ONLINE_PAYMENT, 'Online Payment'),
+        ]
+        
+    DELIVERY_STATUS_CHOICES=[
+        (PENDING_DELIVERY_STATUS, 'Pending'),
+        (PROCESSING_DELIVERY_STATUS, 'Processing'),
+        (SHIPPED_DELIVERY_STATUS, 'Shipped'),
+        (DELIVERED_DELIVERY_STATUS, 'Delivered'),
+        (REUTRNED_DELIVERY_STATUS, 'Returned'),
+        ]
+    #############################
 
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     placed_at = models.DateTimeField(auto_now_add=True)
     delivery_status = models.CharField(
-        max_length=25, choices=DELIVERY_STATUS_CHOICES, default=PENDING_STATUS)
+        max_length=25, choices=DELIVERY_STATUS_CHOICES, default=PENDING_DELIVERY_STATUS)
     payment_status = models.CharField(
-        max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PROCESSING_STATUS)
-
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+        max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PENDING_PAYMENT_STATUS)
+    payment_method = models.CharField(
+        max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PENDING_PAYMENT_STATUS)
     product = models.ForeignKey(
         ProductVariation, on_delete=models.PROTECT)
     unit_price = models.DecimalField(max_digits=6, decimal_places=2)
     quantity = models.PositiveSmallIntegerField()
+    
 
+
+
+  
 
     

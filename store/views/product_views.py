@@ -2,16 +2,15 @@ from django.db.models import Sum, Count
 from store import pil, serializers
 from django.db.models import Q
 
-from store.models.product_models import Cart, CartItem, Category, Product, ProductVariation, Query, ReviewRating
+from store.models.product_models import Basket, BasketItem, Category, Product, ProductVariation, Query, ReviewRating
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, ListModelMixin, DestroyModelMixin
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
-from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView, ListCreateAPIView, GenericAPIView
 from store.permissions import IsAdminOrReadOnly, IsAuthor, IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
-from store.serializers import CartItemAdditionSerializer, CartItemSerializer, CartItemUpdateSerializer, CategorySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, CartSerializer
+from store.serializers import BasketItemAdditionSerializer, BasketItemSerializer, BasketItemUpdateSerializer, CategorySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, BasketSerializer
 
  #@api_view()
 # def product_list(request):
@@ -93,31 +92,35 @@ class QueryViewSet(ModelViewSet):
         return queryset
 
 
-class CartViewSet(CreateModelMixin,RetrieveModelMixin,DestroyModelMixin, GenericViewSet):
-    serializer_class = CartSerializer
-    queryset = Cart.objects.all().prefetch_related('items__product__product')
+class BasketViewSet(CreateModelMixin,RetrieveModelMixin,DestroyModelMixin, GenericViewSet):
+    serializer_class = BasketSerializer
+    queryset = Basket.objects.all().prefetch_related('items__product__product')
     
     
-class CartItemViewSet(ModelViewSet):
+class BAsketItemViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
-    serializer_class = CartItemSerializer
+    serializer_class = BasketItemSerializer
     serializer_classes = {
-        'POST': CartItemAdditionSerializer,
-        'PATCH': CartItemUpdateSerializer,
+        'POST': BasketItemAdditionSerializer,
+        'PATCH': BasketItemUpdateSerializer,
         
     }
 
-    default_serializer_class = CartItemSerializer
+    default_serializer_class = BasketItemSerializer
     
     def get_serializer_class(self):
         return self.serializer_classes.get(self.request.method, self.default_serializer_class)
 
     def get_queryset(self):
-        queryset= CartItem.objects .filter(
-            cart_id=self.kwargs['cart_pk']).select_related('product__product')
+        queryset= BasketItem.objects .filter(
+            basket_id=self.kwargs['basket_pk']).select_related('product__product')
         return queryset
 
     def get_serializer_context(self):
-         return {'cart_pk':self.kwargs["cart_pk"]}
+         return {'basket_pk':self.kwargs["basket_pk"]}
+
+# class OrderViewSet(ModelViewSet):
+
+
     
 

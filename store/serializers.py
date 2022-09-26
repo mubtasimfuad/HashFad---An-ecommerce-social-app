@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import status
-from store.models.product_models import Cart, CartItem, Product, ProductVariation, Category, Query, ReviewRating
+from store.models.product_models import Basket, BasketItem, Order,  Product, ProductVariation, Category, Query, ReviewRating
 from store.models.user_models import *
 
 
@@ -151,7 +151,7 @@ class ProductVariationCartSerializer(serializers.ModelSerializer):
 
 
 
-class CartItemSerializer(serializers.ModelSerializer):
+class BasketItemSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField(read_only=True)
     product = ProductVariationCartSerializer(read_only=True)
 
@@ -159,29 +159,29 @@ class CartItemSerializer(serializers.ModelSerializer):
         return round(object.quantity * Decimal(object.product.price_after_add),3)
 
     class Meta:
-        model = CartItem
+        model = BasketItem
         fields = ['id', 'product', 'quantity', 'total_price']
     
 
-class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(read_only=True, many=True)
+class BasketSerializer(serializers.ModelSerializer):
+    items = BasketItemSerializer(read_only=True, many=True)
     grand_total = serializers.SerializerMethodField(read_only=True)
     
-    def get_grand_total(self,object:Cart):
+    def get_grand_total(self,object:Basket):
         return sum([round((item.quantity * item.product.price_after_add),3) for item in object.items.all()])
     class Meta:
-        model= Cart
+        model= Basket
         fields = ['id','items', 'grand_total']
         read_only_fields = ['id']
 
 
-class CartItemAdditionSerializer(serializers.ModelSerializer):
+class BasketItemAdditionSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField()
     class Meta:
-        model = CartItem
+        model = BasketItem
         fields = ['id', 'product_id','quantity']
     def save(self, **kwargs):
-        cart_id = self.context['cart_pk']
+        basket_id = self.context['basket_pk']
         product_id = self.validated_data['product_id']
         if not ProductVariation.objects.filter(product_id=product_id).exists():
             raise serializers.ValidationError({"product_id":"No Such Product Found"})
@@ -189,15 +189,24 @@ class CartItemAdditionSerializer(serializers.ModelSerializer):
 
         quantity = self.validated_data['quantity']
         try:
-            cart_item =CartItem.objects.get(cart_id=cart_id, product_id=product_id)
-            cart_item.quantity+=quantity
-            cart_item.save()
+            basket_item =BasketItem.objects.get(basket_id=basket_id, product_id=product_id)
+            basket_item.quantity+=quantity
+            basket_item.save()
         except:
-            cart_item = CartItem.objects.create(cart_id=cart_id, product_id=product_id, quantity=quantity)
-        self.instance = cart_item
+            basket_item = BasketItem.objects.create(basket_id=basket_id, product_id=product_id, quantity=quantity)
+        self.instance = basket_item
         return self.instance
             
-class CartItemUpdateSerializer(serializers.ModelSerializer):
+class BasketItemUpdateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CartItem
+        model = BasketItem
         fields = ['quantity']
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_id = serializers.IntegerField()
+    order_id = serializers.IntegerField()
+
+    class Meta:
+        model = Order
+        fields =['id', 'order_id','product_id','quantity','unit_price']
+

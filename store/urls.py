@@ -9,21 +9,21 @@ router.register('variations', product_views.VariationViewSet, basename='product_
 router.register('category', product_views.CategoryViewSet)
 router.register('vendors',user_views.VendorViewSet)
 router.register('customers',user_views.CustomerViewSet)
-router.register('cart', product_views.CartViewSet)
+router.register('basket', product_views.BasketViewSet)
 
 
 product_router = routers.NestedDefaultRouter(router, r'products', lookup='product')
 product_router.register('reviews',product_views.ReviewRatingViewSet, basename="reviews")
 product_router.register('queries',product_views.QueryViewSet, basename="queries")
 
-cart_router = routers.NestedDefaultRouter(router, r'cart', lookup='cart')
-cart_router.register('cart-items',product_views.CartItemViewSet,basename="cart_items")
+basket_router = routers.NestedDefaultRouter(router, r'basket', lookup='basket')
+basket_router.register('basket-items',product_views.BAsketItemViewSet,basename="basket_products")
 
 
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(product_router.urls)),
-    path('', include(cart_router.urls)),
+    path('', include(basket_router.urls)),
 
 
     # path('store/',views.get_products_category, name="get_products_category"),
