@@ -202,11 +202,53 @@ class BasketItemUpdateSerializer(serializers.ModelSerializer):
         model = BasketItem
         fields = ['quantity']
 
-class OrderItemSerializer(serializers.ModelSerializer):
-    product_id = serializers.IntegerField()
-    order_id = serializers.IntegerField()
+class OrderSerializer(serializers.ModelSerializer):
+    customer_id = serializers.IntegerField()
+    product = ProductVariationCartSerializer()
+
 
     class Meta:
         model = Order
-        fields =['id', 'order_id','product_id','quantity','unit_price']
+        fields =['id','customer_id','product','quantity','total_price','placed_at',
+        'delivery_status','payment_status','payment_method',
+        ]
+        
+
+
+class BasketToOrderSerializer(serializers.Serializer):
+    basket_id = serializers.UUIDField()
+
+    
+    def save(self, **kwargs):
+        basket_id = self.validated_data['basket_id']
+        basket = BasketItem.objects.filter(basket_id=basket_id)
+        user_id = self.context['user_id']
+        customer = Customer.objects.get(user_id=user_id)
+        basket_object_list = []
+        stocked_out_products = []
+        
+        
+        for item in basket:
+            if item.product.stock==0:
+                stocked_out_products.append(item.product.id)
+                continue
+            print(item.product.product.title , item.product.price_after_add)
+            order_object=Order(
+                customer_id=customer.id,
+                product = item.product,
+                total_price= item.product.price_after_add,
+                quantity = item.quantity
+                    )
+            basket_object_list.append(order_object)
+        data = [Order.objects.bulk_create(basket_object_list, ignore_conflicts=True), stocked_out_products]
+        return data
+        #     if len(stocked_out_products)>0:
+        #             return Response({"ok":basket_object_list,"stock_out":stocked_out_products},status=status.HTTP_201_CREATED)
+        #     return Response({"ok":basket_object_list},status=status.HTTP_201_CREATED)
+        # except Exception as ex:
+        #         return Response({"error":ex},status=status.HTTP_400_BAD_REQUEST)
+            
+    
+
+
 

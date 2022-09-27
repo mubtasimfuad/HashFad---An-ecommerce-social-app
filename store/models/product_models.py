@@ -164,12 +164,15 @@ class Order(models.Model):
     payment_status = models.CharField(
         max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PENDING_PAYMENT_STATUS)
     payment_method = models.CharField(
-        max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PENDING_PAYMENT_STATUS)
+        max_length=25, choices=PAYMENT_METHOD_CHOICES, null=True, default=None)
     product = models.ForeignKey(
         ProductVariation, on_delete=models.PROTECT)
-    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
+    total_price = models.DecimalField(max_digits=6, decimal_places=2)
     quantity = models.PositiveSmallIntegerField()
     
+
+    def __str__(self) -> str:
+        return str(self.id)
 
 
 
