@@ -11,6 +11,7 @@ drf-nested-routers = "*"
 django-phonenumber-field = {extras = ["phonenumberslite"], version = "*"}
 djangorestframework-simplejwt = "*"
 python-dotenv = "*"
+stripe = "*"
 
 [dev-packages]
 

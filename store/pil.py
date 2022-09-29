@@ -45,24 +45,24 @@ def _get_image_field_color(self,validated_data=None):
         return color
         
    
-def _get_image_field_color(data):
-        color = ""
+# def _get_image_field_color(data):
+#         color = ""
 
-        try:
-            image_file = data['image']
-        except:
-            image_file=data
+#         try:
+#             image_file = data['image']
+#         except:
+#             image_file=data
         
         
-        if image_file:
-            alpha = "hexa"
-            if DJANGO_VERSION >= (2, 0):
-                # https://stackoverflow.com/a/3033986/2096218
+#         if image_file:
+#             alpha = "hexa"
+#             if DJANGO_VERSION >= (2, 0):
+#                 # https://stackoverflow.com/a/3033986/2096218
                
-                    color = get_image_file_background_color(image_file, alpha)
-            else:
-                # https://stackoverflow.com/a/3033986/2096218
-                color = get_image_file_background_color(image_file, alpha)
-        return color
+#                     color = get_image_file_background_color(image_file, alpha)
+#             else:
+#                 # https://stackoverflow.com/a/3033986/2096218
+#                 color = get_image_file_background_color(image_file, alpha)
+#         return color
         
    

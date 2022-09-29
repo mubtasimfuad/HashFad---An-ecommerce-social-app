@@ -1,10 +1,12 @@
 from logging import exception
 from venv import create
 from django.db.models import Sum, Count
+from django.shortcuts import redirect
 from store import pil, serializers
 from django.db.models import Q
-
-from store.models.product_models import Basket, BasketItem, Category, Order, Product, ProductVariation, Query, ReviewRating
+from rest_framework.decorators import action
+from django.conf import settings
+from store.models.product_models import Basket, BasketItem, Category, Invoice, Order, Product, ProductVariation, Query, ReviewRating
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,14 +16,15 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
 from store.models.user_models import Customer, Vendor
 from store.permissions import IsAdminOrReadOnly, IsAuthor, IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
-from store.serializers import BasketItemAdditionSerializer, BasketItemSerializer, BasketItemUpdateSerializer, BasketToOrderSerializer, CategorySerializer, OrderSerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, BasketSerializer
-
+from store.serializers import BasketItemAdditionSerializer, BasketItemSerializer, BasketItemUpdateSerializer, BasketToOrderSerializer, CategorySerializer, InvoiceSerializer, OrderSerializer, PaySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, BasketSerializer
+import stripe
  #@api_view()
 # def product_list(request):
 #     queryset = Product.objects.all().select_related('category').annotate(stock = Sum('variations__stock'))
 #     serializer = ProductSerializer(queryset,many=True,  context={'request': request})
     
 #     return Response(serializer.data)
+# stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
@@ -130,39 +133,83 @@ class OrderViewSet(ModelViewSet):
         'POST': BasketToOrderSerializer,
         
     }
-    def create(self, request, *args, **kwargs):
-        serializer = BasketToOrderSerializer(data=request.data, context= {'user_id': self.request.user.id, "request":self.request })
-        serializer.is_valid(raise_exception=True)
-        order_obj = serializer.save()
-        if len(order_obj)<2:
-         serializer = OrderSerializer(order_obj, many=True,context={"request":self.request } )
-         return Response({"returned_data": serializer.data})
-        else:
-            serializer = OrderSerializer(order_obj[0],  many=True,context={"request":self.request })
-            return Response({"returned_data": serializer.data, "stock_out_product":order_obj[1]})
-
-
-
-    def get_serializer_context(self):
-        return {"request":self.request}    
-    def get_queryset(self):
-        user=  self.request.user
-        if user.is_staff:
-            return Order.objects.all()
-
-        if user.user_type == "customer":
-            customer = Customer.objects.get(user_id=user.id)
-            return Order.objects.filter(customer_id=customer.id)
-        if user.user_type == "vendor":
-            vendor = Vendor.objects.get(user_id=user.id)
-            return Order.objects.filter(product__product__vendor__id=vendor.id)
-   
-    default_serializer_class = OrderSerializer
+    default_serializer_class =InvoiceSerializer #OrderSerializer
    
 
     def get_serializer_class(self):
-        return self.serializer_classes.get(self.request.method, self.default_serializer_class)
+        if self.request.method == "POST":
+            return BasketToOrderSerializer
+        return self.default_serializer_class
 
+    def create(self, request, *args, **kwargs):
+        serializer = BasketToOrderSerializer(data=request.data, context= {'user_id': self.request.user.id, "request":self.request })
+        serializer.is_valid(raise_exception=True)
+        data = serializer.save()
+       
+        serializer = InvoiceSerializer(data[0])
+        return Response({"returned_data": serializer.data, 'stocked_out':data[1]})
+
+
+    def get_serializer_context(self):
+        return {"request":self.request,'user_id': self.request.user.id}    
+    def get_queryset(self):
+        user=  self.request.user
+        if user.is_staff:
+            return Invoice.objects.all()
+
+        if user.user_type == "customer":
+            customer = Customer.objects.get(user_id=user.id)
+            return Invoice.objects.filter(customer_id=customer.id)
+        # if user.user_type == "vendor":
+        #     vendor = Vendor.objects.get(user_id=user.id)
+        #     return Invoice.objects.filter(product__product__vendor__id=vendor.id)
+    @action(detail=True,url_path='pay', methods=["POST"], permission_classes=[IsAuthenticated])
+    def pay(self,request):
+       
+        invoice = Invoice.objects.get(id=self.kwargs["order_pk"])
+        if request.method == 'POST':
+             serializer = PaySerializer(self.kwargs["order_pk"])
+             order_items = []
+
+             for order_item in invoice.order_items.all():
+                product = order_item.product
+                quantity = order_item.quantity
+
+                data = {
+                    'price_data': {
+                        'currency': 'bdt',
+                        'unit_amount_decimal': product.price,
+                        'product_data': {
+                            'name': product.name,
+                            'description': product.desc,
+                        }
+                    },
+                    'quantity': quantity
+                }
+
+                order_items.append(data)
+
+                # serializer = CustomerSerializer(customer)
+             
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=order_items,
+                metadata={
+                    "invoice_id": invoice.id
+                },
+                mode='payment',
+                success_url='www.google.com.bd',
+                cancel_url='www.google.com.bd'
+            )
+            return redirect(checkout_session.url)
+        except Exception as e:
+            return Response({'msg':'something went wrong while creating stripe session','error':str(e)}, status=500)
+        
+        return Response({'sessionId': checkout_session['id']}, status=status.HTTP_201_CREATED)
+     
+
+   
 
 
 

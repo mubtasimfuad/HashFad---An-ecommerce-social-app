@@ -123,6 +123,30 @@ class BasketItem(models.Model):
 
     class Meta:
         unique_together = [['basket', 'product']]
+class Invoice(models.Model):
+    PENDING_PAYMENT_STATUS = 'pending'
+    SUCCESSFUL_PAYMENT_STATUS = 'successful'
+    FAILED_PAYMENT_STATUS = 'failed'
+    CASH_ON_DELIVERY ="cod"
+    ONLINE_PAYMENT = "op"
+    #############################
+    PAYMENT_STATUS_CHOICES = [
+        (PENDING_PAYMENT_STATUS, 'Pending'),
+        (SUCCESSFUL_PAYMENT_STATUS, 'Successful'),
+        (FAILED_PAYMENT_STATUS, 'Failed'),
+    ]
+    PAYMENT_METHOD_CHOICES= [
+        (CASH_ON_DELIVERY, 'Cash On Delivery'),
+        (ONLINE_PAYMENT, 'Online Payment'),
+        ]
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+
+    placed_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(
+        max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PENDING_PAYMENT_STATUS)
+    payment_method = models.CharField(
+        max_length=25, choices=PAYMENT_METHOD_CHOICES, null=True, default=None)
+
 
 class Order(models.Model):
     PENDING_PAYMENT_STATUS = 'pending'
@@ -156,15 +180,10 @@ class Order(models.Model):
         (REUTRNED_DELIVERY_STATUS, 'Returned'),
         ]
     #############################
-
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
-    placed_at = models.DateTimeField(auto_now_add=True)
+    invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name="order_items")
+   
     delivery_status = models.CharField(
         max_length=25, choices=DELIVERY_STATUS_CHOICES, default=PENDING_DELIVERY_STATUS)
-    payment_status = models.CharField(
-        max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PENDING_PAYMENT_STATUS)
-    payment_method = models.CharField(
-        max_length=25, choices=PAYMENT_METHOD_CHOICES, null=True, default=None)
     product = models.ForeignKey(
         ProductVariation, on_delete=models.PROTECT)
     total_price = models.DecimalField(max_digits=6, decimal_places=2)

@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import status
-from store.models.product_models import Basket, BasketItem, Order,  Product, ProductVariation, Category, Query, ReviewRating
+from store.models.product_models import Basket, BasketItem, Invoice, Order,  Product, ProductVariation, Category, Query, ReviewRating
 from store.models.user_models import *
 
 
@@ -203,45 +203,75 @@ class BasketItemUpdateSerializer(serializers.ModelSerializer):
         fields = ['quantity']
 
 class OrderSerializer(serializers.ModelSerializer):
-    customer_id = serializers.IntegerField()
     product = ProductVariationCartSerializer()
-
+#    'placed_at',
+#         'delivery_status','payment_status','payment_method',
 
     class Meta:
         model = Order
-        fields =['id','customer_id','product','quantity','total_price','placed_at',
-        'delivery_status','payment_status','payment_method',
-        ]
+        fields =['id','product','quantity','total_price',
+        'delivery_status',]
         
+
+class InvoiceSerializer(serializers.ModelSerializer):
+#    'placed_at',
+#         'delivery_status','payment_status','payment_method',
+    order_items = OrderSerializer(many=True)
+    class Meta:
+        model = Invoice
+        fields =['id','customer','order_items','placed_at','payment_status','payment_method',]
+        
+
 
 
 class BasketToOrderSerializer(serializers.Serializer):
     basket_id = serializers.UUIDField()
+    CASH_ON_DELIVERY ="cod"
+    ONLINE_PAYMENT = "op"
+    PAYMENT_METHOD_CHOICES= [
+        (CASH_ON_DELIVERY, 'Cash On Delivery'),
+        (ONLINE_PAYMENT, 'Online Payment'),
+        ]
+    payment_method= serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES)
 
-    
+    def validate_basket_id(self,basket_id):
+       if not  Basket.objects.filter(id=basket_id).exists():
+        raise serializers.ValidationError("Basket doesnot exist")
+       if not BasketItem.objects.filter(basket_id=basket_id).count()>0:
+        raise serializers.ValidationError("Basket is empty")
+       return basket_id
     def save(self, **kwargs):
         basket_id = self.validated_data['basket_id']
-        basket = BasketItem.objects.filter(basket_id=basket_id)
+        payment_method = self.validated_data['payment_method']
+        basket = BasketItem.objects.filter(basket_id= self.validated_data['basket_id'])
         user_id = self.context['user_id']
-        customer = Customer.objects.get(user_id=user_id)
+        print(basket_id)
+        customer= Customer.objects.get(user_id=user_id)
+        invoice = Invoice.objects.create(customer_id=customer.id, payment_method=payment_method)
         basket_object_list = []
         stocked_out_products = []
+        order_list=[]
         
-        
+        # for item in basket:
+        #     order =Order.objects.create( invoice=invoice,product = item.product,total_price= item.product.price_after_add,quantity = item.quantity)
+        #     order_list.append(order)
         for item in basket:
             if item.product.stock==0:
                 stocked_out_products.append(item.product.id)
                 continue
-            print(item.product.product.title , item.product.price_after_add)
+            # print(item.product.product.title , item.product.price_after_add)
             order_object=Order(
-                customer_id=customer.id,
+                invoice=invoice,
                 product = item.product,
                 total_price= item.product.price_after_add,
                 quantity = item.quantity
                     )
-            basket_object_list.append(order_object)
-        data = [Order.objects.bulk_create(basket_object_list, ignore_conflicts=True), stocked_out_products]
-        return data
+            order_list.append(order_object)
+            
+        # basket_object_list.append(order_object)
+        Order.objects.bulk_create(order_list)
+        Basket.objects.filter(id=basket_id).delete()
+        return [invoice,stocked_out_products]
         #     if len(stocked_out_products)>0:
         #             return Response({"ok":basket_object_list,"stock_out":stocked_out_products},status=status.HTTP_201_CREATED)
         #     return Response({"ok":basket_object_list},status=status.HTTP_201_CREATED)
@@ -251,4 +281,5 @@ class BasketToOrderSerializer(serializers.Serializer):
     
 
 
-
+class PaySerializer(serializers.Serializer):
+    invoice_id = serializers.IntegerField()
