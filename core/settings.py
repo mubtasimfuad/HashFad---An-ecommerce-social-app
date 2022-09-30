@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'store',
     'account',
+    'logistic',
     #Third Party App
     'rest_framework',
     "debug_toolbar",
