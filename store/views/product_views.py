@@ -1,7 +1,8 @@
 from logging import exception
-from venv import create
+from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
 from django.shortcuts import redirect
+from django.http import HttpResponseRedirect
 from store import pil, serializers
 from django.db.models import Q
 from rest_framework.decorators import action
@@ -24,7 +25,7 @@ import stripe
 #     serializer = ProductSerializer(queryset,many=True,  context={'request': request})
     
 #     return Response(serializer.data)
-# stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
@@ -163,34 +164,35 @@ class OrderViewSet(ModelViewSet):
         # if user.user_type == "vendor":
         #     vendor = Vendor.objects.get(user_id=user.id)
         #     return Invoice.objects.filter(product__product__vendor__id=vendor.id)
-    @action(detail=True,url_path='pay', methods=["POST"], permission_classes=[IsAuthenticated])
-    def pay(self,request):
-       
+    # @action(detail=True,url_path='pay', methods=["POST"], permission_classes=[IsAuthenticated])
+
+class PayStripe(APIView):
+    def post(self, request, *args, **kwargs):
         invoice = Invoice.objects.get(id=self.kwargs["order_pk"])
-        if request.method == 'POST':
-             serializer = PaySerializer(self.kwargs["order_pk"])
-             order_items = []
+        
+        order_items = []
 
-             for order_item in invoice.order_items.all():
-                product = order_item.product
-                quantity = order_item.quantity
+        for order_item in invoice.order_items.all():
+            product:ProductVariation = order_item.product
+            quantity = order_item.quantity
 
-                data = {
-                    'price_data': {
-                        'currency': 'bdt',
-                        'unit_amount_decimal': product.price,
-                        'product_data': {
-                            'name': product.name,
-                            'description': product.desc,
+            data = {
+                'price_data': {
+                    'currency': 'bdt',
+                    'unit_amount_decimal': round((product.price_after_add),3)*100,
+                    'product_data': {
+                        'name': product.product.title,
+                        'description': product.product.description+" "+f"Color: {product.color}"+" "+f"Size: {product.size}"+" ",
+                        'images':['https://static-01.daraz.com.bd/p/6b5147870171629254071485f4e65979.jpg'],
                         }
-                    },
-                    'quantity': quantity
-                }
+                },
+                'quantity': quantity
+            }
 
-                order_items.append(data)
+            order_items.append(data)
 
-                # serializer = CustomerSerializer(customer)
-             
+        # serializer = CustomerSerializer(customer)
+        
         try:
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
@@ -199,17 +201,54 @@ class OrderViewSet(ModelViewSet):
                     "invoice_id": invoice.id
                 },
                 mode='payment',
-                success_url='www.google.com.bd',
-                cancel_url='www.google.com.bd'
+                success_url='http://127.0.0.1:8000/backend/api/v1/store/orders/'+ '?success=true',
+                cancel_url='http://127.0.0.1:8000/backend/api/v1/store/orders/' + '?canceled=true',
             )
-            return redirect(checkout_session.url)
+            return Response({'sessionId': checkout_session['id'],"redirect_url": checkout_session.url}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'msg':'something went wrong while creating stripe session','error':str(e)}, status=500)
-        
-        return Response({'sessionId': checkout_session['id']}, status=status.HTTP_201_CREATED)
-     
 
-   
+
+
+class StripeWebhookAPIView(APIView):
+    """
+    Stripe webhook API view to handle checkout session completed and other events.
+    """
+
+    def post(self, request, format=None):
+        payload = request.body
+        endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+        sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+        event = None
+
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, endpoint_secret)
+        except ValueError as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except stripe.error.SignatureVerificationError as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            customer_email = session['customer_details']['email']
+            invoice_id = session['metadata']['invoice_id']
+
+            print('Payment successfull')
+
+            invoice = get_object_or_404(Invoice, id=invoice_id)
+            invoice.payment_status = 'successful'
+            invoice.save()
+
+           
+            
+            # TODO - Decrease product quantity
+
+            # send_payment_success_email_task.delay(customer_email)
+
+        # Can handle other events here.
+
+        return Response(status=status.HTTP_200_OK)
 
 
 
