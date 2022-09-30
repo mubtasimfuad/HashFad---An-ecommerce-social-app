@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, status, views, permissions
 from rest_framework.response import Response
 from account.models import Account
+from account.permissions import IsAnonymousUser
 from account.serializers import EmailVerificationSerializer, SignInSerializer, SignUpSerializer
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -20,6 +21,7 @@ from django.conf import settings
 class RegisterView(generics.GenericAPIView):
 
     serializer_class = SignUpSerializer
+    permission_classes = [IsAnonymousUser]
 
     def post(self, request):
         user = request.data
@@ -65,6 +67,7 @@ class VerifyEmail(views.APIView):
 
 class SignInAPIView(generics.GenericAPIView):
     serializer_class = SignInSerializer
+    permission_classes=[IsAnonymousUser]
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)

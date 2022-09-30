@@ -54,7 +54,7 @@ class MyAccountManger(BaseUserManager):
 # ]
 
 USER_CHOICES = [
-('staff','Staff'),
+('agent','Agent'),
 ('vendor', 'Vendor'),
 ('customer', 'Customer'),
 ]
