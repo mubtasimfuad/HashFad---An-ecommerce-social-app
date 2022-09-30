@@ -16,4 +16,4 @@ django-rest-framework
 djangorestframework-simplejwt
 drf-nested-routers
 pillow
-python-dotenv
+stripe
