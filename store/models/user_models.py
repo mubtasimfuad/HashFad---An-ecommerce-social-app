@@ -31,7 +31,7 @@ class Vendor(Address):
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.user.first_name} {self.user.last_name}'
+        return self.store_name
 
     def save(self, *args, **kwargs):
         # if not self.id:

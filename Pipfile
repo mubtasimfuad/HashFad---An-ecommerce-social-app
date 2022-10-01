@@ -11,6 +11,10 @@ drf-nested-routers = "*"
 django-phonenumber-field = {extras = ["phonenumberslite"], version = "*"}
 djangorestframework-simplejwt = "*"
 stripe = "*"
+django-filter = "*"
+drf-yasg = "*"
+django-mailjet = "*"
+mailjet-rest = "*"
 
 [dev-packages]
 

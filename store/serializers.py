@@ -1,6 +1,8 @@
 
 from decimal import Decimal
 from itertools import product
+
+from store.models.logistic_models import DeliveryTask
 from . import pil
 from rest_framework import serializers
 from rest_framework import status
@@ -47,10 +49,10 @@ class ProductVariationSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     variation = ProductVariationSerializer(source='variations',
                                   many=True, read_only=True)
-    
+    category_id = serializers.IntegerField()
     class Meta:
         model = Product
-        fields = ['id','vendor_id','title', 'description', 'price', 'featured_image', 'is_available','category','stock','total_variation','slug','variation']
+        fields = ['id','vendor_id','title', 'description', 'price', 'featured_image', 'is_available','category_id','stock','total_variation','slug','variation']
     
     stock = serializers.IntegerField(read_only=True)
     total_variation = serializers.IntegerField(read_only=True)
@@ -284,5 +286,13 @@ class BasketToOrderSerializer(serializers.Serializer):
     
 
 
-class PaySerializer(serializers.Serializer):
-    invoice_id = serializers.IntegerField()
+class DeliveryTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryTask
+        fields = ["id","agent","delivery_time","attempt","order","isReturned","delivered_at","remarks"]
+
+class DeliveryTaskUpdateSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = DeliveryTask
+        fields = ["id","attempt","isReturned","isDelivered","remarks"]
+

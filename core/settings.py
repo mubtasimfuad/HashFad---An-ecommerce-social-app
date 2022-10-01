@@ -46,6 +46,10 @@ INSTALLED_APPS = [
     'rest_framework',
     "debug_toolbar",
     'phonenumber_field',
+    'django_filters',
+    'drf_yasg',
+
+
 ]
 
 MIDDLEWARE = [
@@ -161,12 +165,16 @@ AUTH_USER_MODEL = 'account.Account'
 
 # eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjYzODU3MzIxLCJqdGkiOiI4NmUyODgxZTk2YmE0MTU0YjY0NzU3ZTc1YzhjYzNiOCIsInVzZXJfaWQiOjF9.lGjeRKjbulB6870AwHVc3lEDy_ebpoyOhKmzDWJdx4A
 
-EMAIL_USE_TLS =True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = "hashfad.info@gmail.com"
-EMAIL_HOST_PASSWORD = "exjwkxhkxogiarni"
+# EMAIL_USE_TLS =True
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+EMAIL_HOST = 'in-v3.mailjet.com'
 
+EMAIL_HOST_USER = "hashfad.info@gmail.com"
+# EMAIL_HOST_PASSWORD = "exjwkxhkxogiarni"
+EMAIL_BACKEND = 'django_mailjet.backends.MailjetBackend'
+MAILJET_API_KEY = '07ae3c77e4efbdfe71fe1e3343d9dfd6'
+MAILJET_API_SECRET = '1cb2736d6df186f2e9252f7bb7adda1b'
 
 STRIPE_PUBLIC_KEY='pk_test_51LmzlYDoxGFktomFrqINwZExyX6Pzo7u16eBT70cPbpc92oDAmVAFkfm6hTDgpGDQOgMJQE28NckD4gF3FNTREOV0073rSZm7w'
 STRIPE_SECRET_KEY='sk_test_51LmzlYDoxGFktomF3Y0x7wrGSvlyEiW6GQuNxgVIlaFRSxS5JN7K3MrTltRV1NJbbZfpgedRS5xtogvm983Er1yu008sE7iLhv'

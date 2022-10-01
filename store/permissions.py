@@ -28,12 +28,14 @@ class IsVariationVendor(permissions.BasePermission):
             if request.user.id == obj.product.vendor.user.id:
                 return True
 
-class IsProductVendor(permissions.BasePermission):
+class IsProductVendorOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-         if view.action == "retrieve":
+        user= request.user
+        if (user.is_authenticated and user.is_staff):
             return True
-         if view.action in ['update', 'partial_update','destroy']:
-            
+        if view.action == "retrieve":
+            return True
+        if view.action in ['update', 'partial_update','destroy']:
             if request.user.id == obj.vendor.user.id:
                 return True
 class IsAuthor(permissions.BasePermission):
@@ -66,5 +68,26 @@ class IsAuthorizedUser(permissions.BasePermission):
             if request.user.id == obj.product.vendor.user.id:
                 return True
        
-       
+           
+class IsAgent(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if user.is_authenticated and user.user_type=="agent":
+            if view.action in ['list','retrieve','update', 'partial_update']:
+                return True
+            else:
+                 return False
+        elif user.is_staff:
+            return True 
+class IsAuthorizedCustomer(permissions.BasePermission):
+    
+    def has_object_permission(self, request, view, obj):
+        return obj.customer.user.id == request.user.id or request.user.is_staff
+
+     
+           
+class IsCustomerOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.user_type == "customer" or request.user.is_staff
+
         

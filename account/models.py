@@ -1,5 +1,8 @@
+from email.policy import default
+from xmlrpc.client import DateTime
 from django.db import models
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta,datetime
 
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
@@ -94,3 +97,15 @@ class Account(AbstractBaseUser):
             'access': str(refresh_token.access_token)}
         
         return tokens
+
+
+
+class ActivatorKey(models.Model):
+    user = models.ForeignKey(Account,on_delete=models.CASCADE)
+    activation_key = models.CharField(max_length=6)
+    is_raised = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    invalid_at = models.DateTimeField()
+    
+
+    

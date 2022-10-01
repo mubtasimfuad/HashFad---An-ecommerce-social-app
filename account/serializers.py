@@ -1,9 +1,10 @@
 
+from os import access
 from rest_framework import serializers
 from django.contrib import auth
 from rest_framework.exceptions import AuthenticationFailed
 
-from account.models import Account
+from account.models import Account, ActivatorKey
 from django.contrib.auth.password_validation import validate_password
 
 
@@ -30,6 +31,18 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ['token']
+
+class EmailActivationSerializer(serializers.ModelSerializer):
+    activation_key = serializers.CharField()
+
+    def validate_activation_key(self, activation_key):
+        if not len(activation_key)==10:
+            raise serializers.ValidationError("Wrong Key")
+        return activation_key
+
+    class Meta:
+        model = ActivatorKey
+        fields = ['activation_key']
 
 class SignInSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(min_length=5)

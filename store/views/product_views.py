@@ -1,12 +1,13 @@
 from logging import exception
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
-from django.shortcuts import redirect
-from django.http import HttpResponseRedirect
-from store import pil, serializers
 from django.db.models import Q
 from rest_framework.decorators import action
 from django.conf import settings
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.filters import SearchFilter,OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+from store.filters import CustomProductFilter
 from store.models.product_models import Basket, BasketItem, Category, Invoice, Order, Product, ProductVariation, Query, ReviewRating
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
@@ -16,8 +17,9 @@ from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateMo
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
 from store.models.user_models import Customer, Vendor
-from store.permissions import IsAdminOrReadOnly, IsAuthor, IsProductVendor, IsVariationVendor, IsVendorOrReadOnly
-from store.serializers import BasketItemAdditionSerializer, BasketItemSerializer, BasketItemUpdateSerializer, BasketToOrderSerializer, CategorySerializer, InvoiceSerializer, OrderSerializer, PaySerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, BasketSerializer
+from store.paginations import ListPagination
+from store.permissions import IsAdminOrReadOnly, IsAnonymousUser, IsAuthor, IsAuthorizedCustomer, IsCustomerOrAdmin, IsProductVendorOrAdmin, IsVariationVendor, IsVendorOrReadOnly
+from store.serializers import BasketItemAdditionSerializer, BasketItemSerializer, BasketItemUpdateSerializer, BasketToOrderSerializer, CategorySerializer, InvoiceSerializer, OrderSerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, BasketSerializer
 import stripe
  #@api_view()
 # def product_list(request):
@@ -29,17 +31,17 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [IsProductVendor,IsVendorOrReadOnly]
+    permission_classes = [IsProductVendorOrAdmin,IsVendorOrReadOnly]
+    pagination_class=ListPagination
+    filter_backends = [DjangoFilterBackend,SearchFilter,OrderingFilter]
+    # filterset_fields = ['category_id', 'vendor','price']
+    filterset_class = CustomProductFilter
+    search_fields = ['title','description','vendor__store_name','category__title']
+    ordering_fields = ['price']
 
     def get_queryset(self):
         queryset = Product.objects.all().select_related('category').prefetch_related('variations').annotate(stock = 
         Sum('variations__stock'), total_variation = Count('variations'))
-        
-        category_id = self.request.query_params.get('category__id')
-
-        if category_id is not None:
-            queryset =  queryset.filter(category__id=category_id)
-
         return queryset
 
     def get_serializer_context(self):
@@ -54,6 +56,8 @@ class ProductViewSet(ModelViewSet):
 class VariationViewSet(ModelViewSet):
     serializer_class=ProductVariationSerializer
     permission_classes = [IsVariationVendor, IsVendorOrReadOnly]
+    pagination_class=ListPagination
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["request"] = self.request 
@@ -76,6 +80,9 @@ class CategoryViewSet(ModelViewSet):
 class ReviewRatingViewSet(ModelViewSet):
     serializer_class = ReviewRatingSerializer
     permission_classes=[IsAuthenticatedOrReadOnly, IsAuthor]
+    pagination_class=ListPagination
+    
+
     def get_serializer_context(self):
         context = { "product_pk": self.kwargs['product_pk'], 'request': self.request}
         return context
@@ -89,6 +96,8 @@ class ReviewRatingViewSet(ModelViewSet):
 class QueryViewSet(ModelViewSet):
     serializer_class = QuerySerializer
     permission_classes=[IsAuthenticatedOrReadOnly, IsAuthor]
+    pagination_class=ListPagination
+
 
     def get_serializer_context(self):
         context = { "product_pk": self.kwargs['product_pk'], 'request': self.request}
@@ -103,7 +112,8 @@ class QueryViewSet(ModelViewSet):
 class BasketViewSet(CreateModelMixin,RetrieveModelMixin,DestroyModelMixin, GenericViewSet):
     serializer_class = BasketSerializer
     queryset = Basket.objects.all().prefetch_related('items__product__product')
-    
+    # permission_classes=[IsCustomerOrAdmin]
+
     
 class BasketItemViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -114,6 +124,7 @@ class BasketItemViewSet(ModelViewSet):
     }
 
     default_serializer_class = BasketItemSerializer
+    # permission_classes=[ IsCustomerOrAdmin]
     
     def get_serializer_class(self):
         return self.serializer_classes.get(self.request.method, self.default_serializer_class)
@@ -128,7 +139,9 @@ class BasketItemViewSet(ModelViewSet):
 
 class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated,IsCustomerOrAdmin]
+    pagination_class=ListPagination
+
 
     serializer_classes = {
         'POST': BasketToOrderSerializer,
@@ -239,11 +252,7 @@ class StripeWebhookAPIView(APIView):
             invoice = get_object_or_404(Invoice, id=invoice_id)
             invoice.payment_status = 'successful'
             invoice.save()
-
-           
-            
             # TODO - Decrease product quantity
-
             # send_payment_success_email_task.delay(customer_email)
 
         # Can handle other events here.
