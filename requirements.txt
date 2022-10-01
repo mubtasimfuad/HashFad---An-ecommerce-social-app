@@ -12,9 +12,12 @@
 
 django-debug-toolbar
 django-filter
+django-mailjet
 django-phonenumber-field[phonenumberslite]
 django-rest-framework
 djangorestframework-simplejwt
 drf-nested-routers
+drf-yasg
+mailjet-rest
 pillow
 stripe
