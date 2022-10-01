@@ -1,4 +1,6 @@
+from atexit import register
 from django.contrib import admin
+from store.models.logistic_models import DeliveryTask
 
 from store.models.product_models import Basket, BasketItem, Category, Invoice, Order, Product, ProductVariation, Query, ReviewRating
 from store.models.user_models import DeliveryAgent, Vendor, Customer
@@ -15,6 +17,7 @@ admin.site.register(BasketItem)
 admin.site.register(Order)
 admin.site.register(Invoice)
 admin.site.register(DeliveryAgent)
+admin.site.register(DeliveryTask)
 
 
 

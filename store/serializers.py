@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from store.models.product_models import Basket, BasketItem, Invoice, Order,  Product, ProductVariation, Category, Query, ReviewRating
 from store.models.user_models import *
-
+from store import signals
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -183,7 +183,7 @@ class BasketItemAdditionSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         basket_id = self.context['basket_pk']
         product_id = self.validated_data['product_id']
-        if not ProductVariation.objects.filter(product_id=product_id).exists():
+        if not ProductVariation.objects.filter(id=product_id).exists():
             raise serializers.ValidationError({"product_id":"No Such Product Found"})
         
 
@@ -247,6 +247,8 @@ class BasketToOrderSerializer(serializers.Serializer):
         user_id = self.context['user_id']
         print(basket_id)
         customer= Customer.objects.get(user_id=user_id)
+        if customer.district  == None or customer.city == None or customer.address == None:
+            raise serializers.ValidationError("Before Ordering, you must complete your profile") 
         invoice = Invoice.objects.create(customer_id=customer.id, payment_method=payment_method)
         basket_object_list = []
         stocked_out_products = []
@@ -271,6 +273,7 @@ class BasketToOrderSerializer(serializers.Serializer):
         # basket_object_list.append(order_object)
         Order.objects.bulk_create(order_list)
         Basket.objects.filter(id=basket_id).delete()
+        signals.invoice_created.send_robust(sender=self.__class__,instance=invoice)
         return [invoice,stocked_out_products]
         #     if len(stocked_out_products)>0:
         #             return Response({"ok":basket_object_list,"stock_out":stocked_out_products},status=status.HTTP_201_CREATED)

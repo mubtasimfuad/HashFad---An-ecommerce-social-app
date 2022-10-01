@@ -1,5 +1,7 @@
 from django.db import models
 from django.db.models import Sum
+from phonenumber_field.modelfields import PhoneNumberField 
+
 from django.conf import settings
 from store import pil
 from store.models.user_models import Vendor, Customer
@@ -68,7 +70,7 @@ class ProductVariation(models.Model):
     
     def save(self,*args, **kwargs):
         if self.color is None or "":
-            self.color = pil._get_image_field_color(self)
+            self.color = pil._get_image_field_color(self,validated_data=None)
         
         return super().save(*args, **kwargs)
     @property
@@ -123,6 +125,7 @@ class BasketItem(models.Model):
 
     class Meta:
         unique_together = [['basket', 'product']]
+
 class Invoice(models.Model):
     PENDING_PAYMENT_STATUS = 'pending'
     SUCCESSFUL_PAYMENT_STATUS = 'successful'
@@ -184,6 +187,7 @@ class Order(models.Model):
    
     delivery_status = models.CharField(
         max_length=25, choices=DELIVERY_STATUS_CHOICES, default=PENDING_DELIVERY_STATUS)
+    
     product = models.ForeignKey(
         ProductVariation, on_delete=models.PROTECT)
     total_price = models.DecimalField(max_digits=6, decimal_places=2)
