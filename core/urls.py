@@ -24,11 +24,11 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Snippets API",
-      default_version='v1',
-      description="Test description",
+      title="HashFad- A Social Shopping App",
+      default_version='backend/api/v1',
+      description="A Social Ecommerce APp",
       terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="contact@snippets.local"),
+      contact=openapi.Contact(email="hashfad.info@gmail.com"),
       license=openapi.License(name="BSD License"),
    ),
    public=True,

@@ -1,4 +1,3 @@
-from atexit import register
 from django.contrib import admin
 from store.models.logistic_models import DeliveryTask
 

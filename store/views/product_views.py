@@ -84,11 +84,11 @@ class ReviewRatingViewSet(ModelViewSet):
     
 
     def get_serializer_context(self):
-        context = { "product_pk": self.kwargs['product_pk'], 'request': self.request}
+        context = { "product_pk": self.kwargs.get('product_pk',None), 'request': self.request}
         return context
 
     def get_queryset(self):
-        product_id=  self.kwargs['product_pk']
+        product_id=  self.kwargs.get('product_pk',None)
         queryset = ReviewRating.objects.filter(product=product_id)
         return queryset
     
@@ -100,11 +100,11 @@ class QueryViewSet(ModelViewSet):
 
 
     def get_serializer_context(self):
-        context = { "product_pk": self.kwargs['product_pk'], 'request': self.request}
+        context = { "product_pk": self.kwargs.get('product_pk',None), 'request': self.request}
         return context
 
     def get_queryset(self):
-        product_id=  self.kwargs['product_pk']
+        product_id=  self.kwargs.get('product_pk',None)
         queryset = Query.objects.filter(Q(query=None) & Q(product=product_id))
         return queryset
 
@@ -131,11 +131,11 @@ class BasketItemViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset= BasketItem.objects .filter(
-            basket_id=self.kwargs['basket_pk']).select_related('product__product')
+            basket_id=self.kwargs.get('basket_pk',None)).select_related('product__product')
         return queryset
 
     def get_serializer_context(self):
-         return {'basket_pk':self.kwargs["basket_pk"]}
+         return {'basket_pk':self.kwargs.get('basket_pk',None)}
 
 class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -170,10 +170,12 @@ class OrderViewSet(ModelViewSet):
         user=  self.request.user
         if user.is_staff:
             return Invoice.objects.all()
-
-        if user.user_type == "customer":
-            customer = Customer.objects.get(user_id=user.id)
-            return Invoice.objects.filter(customer_id=customer.id)
+        else:
+            try:
+                customer = Customer.objects.get(user_id=user.id).first()
+                return Invoice.objects.filter(customer_id=customer.id)
+            except:
+                 return None
         # if user.user_type == "vendor":
         #     vendor = Vendor.objects.get(user_id=user.id)
         #     return Invoice.objects.filter(product__product__vendor__id=vendor.id)
@@ -181,7 +183,7 @@ class OrderViewSet(ModelViewSet):
 
 class PayStripe(APIView):
     def post(self, request, *args, **kwargs):
-        invoice = Invoice.objects.get(id=self.kwargs["order_pk"])
+        invoice = Invoice.objects.get(id=self.kwargs.get("order_pk",None))
         
         order_items = []
 

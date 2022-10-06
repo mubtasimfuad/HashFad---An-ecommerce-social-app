@@ -1,13 +1,25 @@
 from django.db import models
 from django.db.models import Sum
 from phonenumber_field.modelfields import PhoneNumberField 
-
+from django.template.defaultfilters import slugify
 from django.conf import settings
 from store import pil
 from store.models.user_models import Vendor, Customer
 from django.core.validators import MinValueValidator
 from uuid import uuid4
 from decimal import Decimal
+
+# TODO 
+# class Brochure(models.Model):
+#     title = models.CharField(max_length=50, unique=True)
+#     slug = models.SlugField(max_length=100, unique=True, blank=True)
+#     description = models.TextField(max_length=255, blank=True)
+
+#     def save(self,*args, **kwargs):
+#         if not self.slug:
+#             self.slug=slugify(self.title)
+#         return super().save(*args, **kwargs)
+
 
 class Category(models.Model):
     title = models.CharField(max_length=50, unique=True)

@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from store.models.product_models import Basket, BasketItem, Invoice, Order,  Product, ProductVariation, Category, Query, ReviewRating
 from store.models.user_models import *
+from store.models.promotion_models import *
 from store import signals
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -52,7 +53,20 @@ class ProductSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField()
     class Meta:
         model = Product
-        fields = ['id','vendor_id','title', 'description', 'price', 'featured_image', 'is_available','category_id','stock','total_variation','slug','variation']
+        fields = [
+            'id',
+            'vendor_id',
+            'title', 
+            'description', 
+            'price', 
+            'featured_image', 
+            'is_available',
+            'category_id',
+            'stock',
+            'total_variation',
+            'slug',
+            'variation',
+            ]
     
     stock = serializers.IntegerField(read_only=True)
     total_variation = serializers.IntegerField(read_only=True)
@@ -68,7 +82,13 @@ class ReviewRatingSerializer(serializers.ModelSerializer):
     class Meta:
         
         model= ReviewRating
-        fields = ["product_id","user_id",'subject', 'review', 'rating']
+        fields = [
+            "product_id",
+            "user_id",
+            'subject', 
+            'review', 
+            'rating',
+            ]
         read_only_fields = ["product_id","user_id",]
 
     def validate(self, attrs):
@@ -91,7 +111,14 @@ class QuerySerializer(serializers.ModelSerializer):
 
     class Meta:
         model= Query
-        fields = ['id',"query",'product_id','user_id', 'body', "sub_query", ]
+        fields = [
+            'id',
+            "query",
+            'product_id',
+            'user_id', 
+            'body', 
+            "sub_query", 
+            ]
         read_only_fields = ["product_id","user_id",]
     
         
@@ -113,23 +140,63 @@ class QuerySerializer(serializers.ModelSerializer):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
-        fields = ['address','city','district','phone1','phone2']
+        fields = [
+            'address',
+            'city',
+            'district',
+            'phone1',
+            'phone2'
+            ]
 
 class VendorCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields= ['id', 'user', 'store_name', 'birth_date', 'nid', 'licence_id','address', 'city','district','phone1']
+        fields= [
+            'id', 
+            'user', 
+            'store_name', 
+            'birth_date', 
+            'nid', 
+            'licence_id',
+            'address', 
+            'city',
+            'district',
+            'phone1',
+            ]
         read_only_fields  = ('user',)
 class VendorBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields= ['id', 'user_id','username', 'store_name', 'birth_date', 'nid', 'licence_id','address', 'city','district','phone1','phone2']
+        fields= [
+            'id', 
+            'user_id',
+            'username',
+            'store_name',
+            'birth_date', 
+            'nid', 
+            'licence_id',
+            'address', 
+            'city',
+            'district',
+            'phone1',
+            'phone2',
+            ]
 
 class CustomerSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(read_only=True)
     class Meta:
         model = Customer
-        fields= ['id', 'user_id','username', 'birth_date', 'address', 'city','district','phone1','phone2']
+        fields= [
+            'id', 
+            'user_id',
+            'username', 
+            'birth_date', 
+            'address', 
+            'city',
+            'district',
+            'phone1',
+            'phone2',
+            ]
         read_only_fields = ('user_id',)
 
     # def create(self, validated_data):
@@ -145,7 +212,13 @@ class ProductVariationCartSerializer(serializers.ModelSerializer):
 
      class Meta:
         model = ProductVariation
-        fields = ['product','image','unit_price_with_tax','color','size']
+        fields = [
+            'product',
+            'image',
+            'unit_price_with_tax',
+            'color',
+            'size',
+            ]
         read_only_fields = ['unit_price_with_tax']
 
      def get_unit_price_with_tax(self,object:ProductVariation):
@@ -162,8 +235,14 @@ class BasketItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasketItem
-        fields = ['id', 'product', 'quantity', 'total_price']
+        fields = [
+            'id',
+            'product',
+            'quantity', 
+            'total_price',
+            ]
     
+
 
 class BasketSerializer(serializers.ModelSerializer):
     items = BasketItemSerializer(read_only=True, many=True)
@@ -173,7 +252,12 @@ class BasketSerializer(serializers.ModelSerializer):
         return sum([round((item.quantity * item.product.price_after_add),3) for item in object.items.all()])
     class Meta:
         model= Basket
-        fields = ['id','items', 'grand_total']
+        fields = [
+            'id',
+            'items', 
+            'grand_total'
+            ]
+
         read_only_fields = ['id']
 
 
@@ -181,7 +265,11 @@ class BasketItemAdditionSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField()
     class Meta:
         model = BasketItem
-        fields = ['id', 'product_id','quantity']
+        fields = [
+            'id', 
+            'product_id',
+            'quantity'
+            ]
     def save(self, **kwargs):
         basket_id = self.context['basket_pk']
         product_id = self.validated_data['product_id']
@@ -211,19 +299,29 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields =['id','product','quantity','total_price',
-        'delivery_status',]
+        fields =[
+            'id',
+            'product',
+            'quantity',
+            'total_price',
+            'delivery_status',
+            ]
         
 
 class InvoiceSerializer(serializers.ModelSerializer):
-#    'placed_at',
-#         'delivery_status','payment_status','payment_method',
+
     order_items = OrderSerializer(many=True)
     class Meta:
         model = Invoice
-        fields =['id','customer','order_items','placed_at','payment_status','payment_method',]
+        fields =[
+            'id',
+            'customer',
+            'order_items',
+            'placed_at',
+            'payment_status',
+            'payment_method',
+            ]
         
-
 
 
 class BasketToOrderSerializer(serializers.Serializer):
@@ -289,10 +387,69 @@ class BasketToOrderSerializer(serializers.Serializer):
 class DeliveryTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryTask
-        fields = ["id","agent","delivery_time","attempt","order","isReturned","delivered_at","remarks"]
+        fields = [
+            "id",
+            "agent",
+            "delivery_time",
+            "attempt",
+            "order",
+            "isReturned",
+            "delivered_at",
+            "remarks",
+             ]
 
 class DeliveryTaskUpdateSerializer(serializers.ModelSerializer):
      class Meta:
         model = DeliveryTask
-        fields = ["id","attempt","isReturned","isDelivered","remarks"]
+        fields = [
+            "id",
+            "attempt",
+            "isReturned",
+            "isDelivered",
+            "remarks",
+            ]
 
+# TODO celery task for attempts
+
+class ProductsAddToPromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = [
+            'id',
+            'title',
+            ]
+        read_only_fields = ['title',]
+
+class ProductPromotionalOfferSerializer(serializers.ModelSerializer):
+    product = ProductsAddToPromotionSerializer()
+    class Meta:
+        model = ProductsOnPromotionalOffer
+        fields = [
+            'product',
+            'promotion',
+            'promo_price',
+            'price_override',
+
+
+        ]
+
+
+class PromotionalOfferSerializer(serializers.ModelSerializer):
+    products = ProductsAddToPromotionSerializer(many=True, required=False, source='product_on_promotional_offer_promotion')
+    class Meta:
+        model = PromotionalOffer
+        fields = [
+            'id',
+            'name',
+            'description',
+            'offer_start',
+            'offer_end',
+            'promo_reduction',
+            'is_scheduled',
+            'is_active',
+            'products',
+            "promo_type",
+            'coupon',
+
+
+        ]

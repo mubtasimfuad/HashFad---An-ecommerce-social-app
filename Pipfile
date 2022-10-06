@@ -15,6 +15,9 @@ django-filter = "*"
 drf-yasg = "*"
 django-mailjet = "*"
 mailjet-rest = "*"
+redis = "*"
+celery = "*"
+flower = "*"
 
 [dev-packages]
 

@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from mailjet_rest import Client
 import os
 from datetime import datetime,timedelta
+from .utils import format_html
 # Create your views here.
 
 
@@ -43,17 +44,11 @@ class RegisterView(generics.GenericAPIView):
         relative_link = reverse('email-activate')
         mailjet = Client(auth=(settings.MAILJET_API_KEY, settings.MAILJET_API_SECRET), version='v3.1')
 
-
+        link_to_submit = 'http://'+current_site+relative_link
         absurl = 'http://'+current_site+relative_link+"?activation_key="+str(activation_key)
 
         email_body = ' Use the link below to verify your email \n'+absurl
-        body_html = f'''<html>
-         <body>
-        <h1>Hi,{user.first_name}</h1>
-        {email_body}
-        <footer>  <img src="https://i.ibb.co/5j3rTYp/logo.png" /></footer>
-       </body>
-      </html>'''
+        body_html = format_html(user.first_name,activation_key,absurl,link_to_submit)
         data = {
         'Messages': [
             {
@@ -104,10 +99,16 @@ class RegisterView(generics.GenericAPIView):
 
 
 class ActivateEmail(views.APIView):
-      serializer_class = EmailActivationSerializer
-      def get(self, request):
-        activation_key = request.GET.get('activation_key')
-
+    http_method_names = ['get', 'post']
+    serializer_class = EmailActivationSerializer
+    def post(self, request):
+        user = request.data
+        serializer = self.serializer_class(data=user)
+        serializer.is_valid(raise_exception=True)
+        activation_key=user["activation_key"].lower()
+        print(activation_key)
+            
+       
         try:
             activator=get_object_or_404(ActivatorKey,activation_key=activation_key)
             print(activation_key,activator)
@@ -122,11 +123,34 @@ class ActivateEmail(views.APIView):
                     return Response({'key': "Used key"}, status=status.HTTP_406_NOT_ACCEPTABLE)
             else:
                     return Response({'key': "Expired Key"}, status=status.HTTP_406_NOT_ACCEPTABLE)
-          
+            
             return Response({'email': "Succesfully Activated"}, status=status.HTTP_202_ACCEPTED)
         except:
-            return Response( status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({'key': "Invalid Key"}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
+    def get(self, request):
+        activation_key = request.GET.get('activation_key')
+        if not activation_key ==None or "":
+                
+            try:
+                activator=get_object_or_404(ActivatorKey,activation_key=activation_key)
+                print(activation_key,activator)
+                if not activator.is_raised:
+                    user = Account.objects.get(id=activator.user.id)
+                    activator.is_raised=True
+                    activator.save()
+                    if not user.is_active:
+                        user.is_active = True
+                        user.save()
+                    else:
+                        return Response({'key': "Used key"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                else:
+                        return Response({'key': "Expired Key"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            
+                return Response({'email': "Succesfully Activated"}, status=status.HTTP_202_ACCEPTED)
+            except:
+                return Response({'key': "Invalid Key"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        return Response("Post the activation key")
 
 
 

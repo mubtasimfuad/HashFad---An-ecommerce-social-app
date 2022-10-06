@@ -16,7 +16,8 @@ class IsVendorOrReadOnly(permissions.BasePermission):
 class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if (request.method in permissions.SAFE_METHODS):
-            if (request.user.is_authenticated and request.user.is_staff):
+            return True
+        elif (request.user.is_authenticated and request.user.is_staff):
                 return True
 
 class IsVariationVendor(permissions.BasePermission):

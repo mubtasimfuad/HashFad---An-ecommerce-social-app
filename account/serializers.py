@@ -32,7 +32,7 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
         model = Account
         fields = ['token']
 
-class EmailActivationSerializer(serializers.ModelSerializer):
+class EmailActivationSerializer(serializers.Serializer):
     activation_key = serializers.CharField()
 
     def validate_activation_key(self, activation_key):
@@ -40,9 +40,8 @@ class EmailActivationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Wrong Key")
         return activation_key
 
-    class Meta:
-        model = ActivatorKey
-        fields = ['activation_key']
+    # class Meta:
+    #     fields = ['activation_key']
 
 class SignInSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(min_length=5)
