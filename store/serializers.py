@@ -3,6 +3,7 @@ from decimal import Decimal
 from itertools import product
 
 from store.models.logistic_models import DeliveryTask
+from store.tasks import delete_idle_cart, offer_promotions,manage_promotions
 from . import pil
 from rest_framework import serializers
 from rest_framework import status
@@ -255,11 +256,18 @@ class BasketSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'items', 
-            'grand_total'
+            'grand_total',
+            
             ]
 
         read_only_fields = ['id']
 
+    def create(self, validated_data):
+        instance= super().create(validated_data)
+        object_id = instance.id
+        delete_idle_cart.delay(object_id)
+        return instance
+    
 
 class BasketItemAdditionSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField()
@@ -421,21 +429,43 @@ class ProductsAddToPromotionSerializer(serializers.ModelSerializer):
         read_only_fields = ['title',]
 
 class ProductPromotionalOfferSerializer(serializers.ModelSerializer):
-    product = ProductsAddToPromotionSerializer()
+    product_id = serializers.IntegerField()
+    promotion_id=serializers.IntegerField(read_only=True)
     class Meta:
         model = ProductsOnPromotionalOffer
         fields = [
-            'product',
-            'promotion',
+            'id',
+            'promotion_id',
+            'product_id',
             'promo_price',
             'price_override',
 
 
         ]
+    def save(self, **kwargs):
+        promotion_id = self.context['promotion_pk']
+        product_id = self.validated_data['product_id']
+        promo_price = self.validated_data['promo_price']
+        if not Product.objects.filter(id=product_id).exists():
+            raise serializers.ValidationError({"product_id":"No Such Product Found"})
+        
+
+        price_override = self.validated_data['price_override']
+        try:
+            product_on_promotion =ProductsOnPromotionalOffer.objects.get(promotion_id=promotion_id, product_id=product_id)
+            product_on_promotion.price_override=price_override
+            product_on_promotion.promo_price=promo_price
+            product_on_promotion.save()
+        except:
+            product_on_promotion = ProductsOnPromotionalOffer.objects.create(promotion_id=promotion_id, product_id=product_id, price_override=price_override,promo_price=promo_price)
+        self.instance = product_on_promotion
+        return self.instance
+            
+            
 
 
 class PromotionalOfferSerializer(serializers.ModelSerializer):
-    products = ProductsAddToPromotionSerializer(many=True, required=False, source='product_on_promotional_offer_promotion')
+    products = ProductsAddToPromotionSerializer(many=True, required=False,read_only=True)
     class Meta:
         model = PromotionalOffer
         fields = [
@@ -450,6 +480,12 @@ class PromotionalOfferSerializer(serializers.ModelSerializer):
             'products',
             "promo_type",
             'coupon',
-
-
         ]
+        # read_only_fields =['products']
+    def save(self, **kwargs):
+        instance =super().save(**kwargs)
+        discount_percent = self.validated_data['promo_reduction']
+        object_id = instance.id
+        offer_promotions.delay(discount_percent,object_id)
+        manage_promotions.delay()
+        return instance

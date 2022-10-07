@@ -113,6 +113,7 @@ class BasketViewSet(CreateModelMixin,RetrieveModelMixin,DestroyModelMixin, Gener
     serializer_class = BasketSerializer
     queryset = Basket.objects.all().prefetch_related('items__product__product')
     # permission_classes=[IsCustomerOrAdmin]
+   
 
     
 class BasketItemViewSet(ModelViewSet):

@@ -19,6 +19,7 @@ class DeliveryTask(models.Model):
             self.delivered_at = datetime.now()
             self.isReturned =False
         return super().save(*args, **kwargs)
+ 
     def __str__(self) -> str:
         return self.agent.username + " "+ str(self.order) + " ("+str(self.delivery_time)+" )"
 

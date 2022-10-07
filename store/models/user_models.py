@@ -6,6 +6,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.template.defaultfilters import slugify
 from datetime import date
 
+
 _current_year = str(date.today().year)[-2:]
 
 
@@ -31,7 +32,7 @@ class Vendor(Address):
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.store_name
+        return self.store_name or ""
 
     def save(self, *args, **kwargs):
         # if not self.id:
@@ -49,7 +50,7 @@ class Customer(Address):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.user.first_name} {self.user.last_name}'
+        return f'{self.user.first_name} {self.user.last_name}' or ""
 
     def save(self, *args, **kwargs):
         # isVendor = Vendor.objects.get(user=self.user.id)
@@ -57,6 +58,7 @@ class Customer(Address):
         #     raise PermissionError("Can't create a customer profile with the same id of vendor")
         if not self.id:
             self.username = 'c'+_current_year+str(self.user.id)+"-"+slugify(self.user.first_name)+slugify(self.user.last_name)
+        
         return super().save(*args, **kwargs)
 
     class Meta:
@@ -71,7 +73,7 @@ class DeliveryAgent(Address):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.user.first_name} {self.user.last_name}'
+        return f'{self.user.first_name} {self.user.last_name}'or ""
 
     def save(self, *args, **kwargs):
         if not self.id:

@@ -1,2 +1,2 @@
-from .celery import celery
+from core.celery import celery
 

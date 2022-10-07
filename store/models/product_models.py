@@ -53,9 +53,11 @@ class Product(models.Model):
     
     class Meta:
         ordering = ('-modified_at',)
+    # def __str__(self) -> str:
+    #     return ""
 
     def __str__(self) -> str:
-        return self.title 
+        return self.title or ""
     # @property
     # def get_stock(self):
     #     stock = ProductVariation.objects.filter(product=self.id).prefetch_related('product').aggregate(Sum('stock'))['stock__sum']
@@ -94,7 +96,7 @@ class ProductVariation(models.Model):
 
 
     def __str__(self):
-        return self.product.title 
+        return self.product.title or ""
 
 
 class ReviewRating(models.Model):
@@ -107,7 +109,7 @@ class ReviewRating(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.subject
+        return self.subject or ""
 
 class Query(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -118,17 +120,17 @@ class Query(models.Model):
     query = models.ForeignKey('self',on_delete=models.CASCADE, related_name='query_reply', default=None, null=True, blank=True)
 
     def __str__(self):
-        return self.body[:30]
+        return self.body[:30] or ""
 
 class Basket(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
+    # created_by = models.ForeignKey(Customer,null=True, default=None)
 
     @property
     def grand_total(self):
         sum([round((item.quantity * item.product.price_after_add),3) for item in self.items.all()])
-
-
+   
 class BasketItem(models.Model):
     basket = models.ForeignKey(
         Basket, on_delete=models.CASCADE, related_name='items')
@@ -207,7 +209,7 @@ class Order(models.Model):
     
 
     def __str__(self) -> str:
-        return str(self.id)
+        return str(self.id) or ""
 
 
 

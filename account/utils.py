@@ -278,103 +278,103 @@ style=''' <style>
 def format_html(recipient,key,link,link_to_submit):
     html_body =f'''
     
-    
-<!doctype html>
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width" />
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Simple Transactional Email</title>
-   {style}
-  </head>
-    <body class="">
-    <table border="0" cellpadding="0" cellspacing="0" class="body">
-      <tr>
-        <td>&nbsp;</td>
-        <td class="container">
-          <div class="content">
-
-            <!-- START CENTERED WHITE CONTAINER -->
-            <span class="preheader">This is preheader text. Some clients will show this text as a preview.</span>
-            <table class="main">
-
-              <!-- START MAIN CONTENT AREA -->
+            
+        <!doctype html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width" />
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+            <title>Simple Transactional Email</title>
+          {style}
+          </head>
+            <body class="">
+            <table border="0" cellpadding="0" cellspacing="0" class="body">
               <tr>
-                <td class="wrapper">
-                  <table border="0" cellpadding="0" cellspacing="0">
-                    <tr>
-                      <td>
-                        <h2>Hi {recipient},</h2>
-                        <p>Thanks for choosing <b><i>#HashFad</i></b>. To Activate Your account click on the button or copy the activation key and go to this 
-<a href="{link_to_submit}" target="_blank">link </a> to submit it.</p>
+                <td>&nbsp;</td>
+                <td class="container">
+                  <div class="content">
 
- <table border="0" cellpadding="0" cellspacing="0" class="btn btn-info">
-                          <tbody>
+                    <!-- START CENTERED WHITE CONTAINER -->
+                    <span class="preheader">This is preheader text. Some clients will show this text as a preview.</span>
+                    <table class="main">
+
+                      <!-- START MAIN CONTENT AREA -->
+                      <tr>
+                        <td class="wrapper">
+                          <table border="0" cellpadding="0" cellspacing="0">
                             <tr>
-                              <td align="left">
-                                <table border="0" cellpadding="0" cellspacing="0">
+                              <td>
+                                <h2>Hi {recipient},</h2>
+                                <p>Thanks for choosing <b><i>#HashFad</i></b>. To Activate Your account click on the button or copy the activation key and go to this 
+        <a href="{link_to_submit}" target="_blank">link </a> to submit it.</p>
+
+        <table border="0" cellpadding="0" cellspacing="0" class="btn btn-info">
                                   <tbody>
                                     <tr>
+                                      <td align="left">
+                                        <table border="0" cellpadding="0" cellspacing="0">
+                                          <tbody>
+                                            <tr>
 
 
-                                      <td> <a style=" text-transform: None;">{key}</a> </td>
-                                    </tr>
-                                  </tbody>
-                                </table>   
-<br>               
-<table border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
-                          <tbody>
-                            <tr>
-                              <td align="left">
-                                <table border="0" cellpadding="0" cellspacing="0">
+                                              <td> <a style=" text-transform: None;">{key}</a> </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>   
+        <br>               
+        <table border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
                                   <tbody>
                                     <tr>
+                                      <td align="left">
+                                        <table border="0" cellpadding="0" cellspacing="0">
+                                          <tbody>
+                                            <tr>
 
 
-                                      <td> <a href="{link}" target="_blank">Click To Activate</a> </td>
+                                              <td> <a href="{link}" target="_blank">Click To Activate</a> </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </td>
                                     </tr>
                                   </tbody>
                                 </table>
+                                
+                                <p>Good luck! See you on the board.</p>
+          <center><img src="https://i.ibb.co/5j3rTYp/logo.png" /></center>
+
                               </td>
                             </tr>
-                          </tbody>
-                        </table>
-                        
-                        <p>Good luck! See you on the board.</p>
-   <center><img src="https://i.ibb.co/5j3rTYp/logo.png" /></center>
-
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-  
-
-            <!-- END MAIN CONTENT AREA -->
-            </table>
-
-             
+                          </table>
+                        </td>
+                      </tr>
           
 
-          <!-- END CENTERED WHITE CONTAINER -->
-          </div>
-        </td>
-        <td>&nbsp;</td>
-      </tr>
-    </table>
+                    <!-- END MAIN CONTENT AREA -->
+                    </table>
 
-    
+                    
+                  
 
-    
-    
-    
-    <!-- GA -->
-  
-  </body>
-</html>
+                  <!-- END CENTERED WHITE CONTAINER -->
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+              </tr>
+            </table>
 
-    
-    '''
+            
+
+            
+            
+            
+            <!-- GA -->
+          
+          </body>
+        </html>
+
+            
+            '''
     return html_body
 
 

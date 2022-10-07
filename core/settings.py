@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from django.core.mail.backends.console import EmailBackend
+from celery.schedules import crontab
 import os 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -61,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -76,7 +78,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'store.context_processors.request_context'
             ],
         },
     },
@@ -88,10 +89,24 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'OPTIONS': {
+#             'timeout': 24,
+#         }
+#     }
+    
+# }
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "abc",
+        "HOST": "localhost",
     }
 }
 
@@ -183,3 +198,17 @@ STRIPE_WEBHOOK_SECRET='whsec_f64a0577b21139e882475dca899a90280af6c375067c83fdb94
 
 
 CELERY_BROKER_URL = 'redis://localhost:6379/1'
+CELERY_BEAT_SCHEDULE = {
+    "promotion_management_task": {
+        "task": "store.tasks.manage_promotions",
+        "schedule": crontab(minute="0", hour="0"),
+    },
+     "birthday_mail_task": {
+        "task": "store.tasks.send_birthday_email",
+        "schedule": crontab(minute="0", hour="0"),
+    },
+       "delete_idle_cart_task": {
+        "task": "store.tasks.delete_idle_cart",
+        "schedule": crontab(minute="0", hour="0"),
+    },
+}

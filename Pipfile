@@ -18,6 +18,7 @@ mailjet-rest = "*"
 redis = "*"
 celery = "*"
 flower = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 
