@@ -102,7 +102,7 @@ class Account(AbstractBaseUser):
 
 class ActivatorKey(models.Model):
     user = models.ForeignKey(Account,on_delete=models.CASCADE)
-    activation_key = models.CharField(max_length=6)
+    activation_key = models.CharField(max_length=10)
     is_raised = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     invalid_at = models.DateTimeField()

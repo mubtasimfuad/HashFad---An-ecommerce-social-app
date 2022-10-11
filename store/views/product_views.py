@@ -1,4 +1,5 @@
 from logging import exception
+from math import ceil
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum, Count
 from django.db.models import Q
@@ -58,18 +59,15 @@ class VariationViewSet(ModelViewSet):
     permission_classes = [IsVariationVendor, IsVendorOrReadOnly]
     pagination_class=ListPagination
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["request"] = self.request 
-        return context
+    def get_serializer_context(self):
+         return {'product_pk':self.kwargs.get('product_pk',None),'request': self.request }
+    
 
     def get_queryset(self):
-    
-        queryset =  ProductVariation.objects.all().select_related('product')
-        product_id=  self.request.GET.get('product__id', None)
-        if product_id:
-            queryset = queryset.filter(product=product_id)
-
+        queryset =  ProductVariation.objects.filter(product_id = self.kwargs.get('product_pk',None)).select_related('product')
+        # product_id=  self.request.GET.get('product__id', None)
+        # if product_id:
+        #     queryset = queryset.filter(product=product_id)
         return queryset
     
 class CategoryViewSet(ModelViewSet):
@@ -141,7 +139,6 @@ class BasketItemViewSet(ModelViewSet):
 class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes=[IsAuthenticated,IsCustomerOrAdmin]
-    pagination_class=ListPagination
 
 
     serializer_classes = {
@@ -195,7 +192,7 @@ class PayStripe(APIView):
             data = {
                 'price_data': {
                     'currency': 'bdt',
-                    'unit_amount_decimal': round((product.price_after_add),3)*100,
+                    'unit_amount_decimal': ceil((product.price_after_add))*100,
                     'product_data': {
                         'name': product.product.title,
                         'description': product.product.description+" "+f"Color: {product.color}"+" "+f"Size: {product.size}"+" ",
@@ -255,6 +252,9 @@ class StripeWebhookAPIView(APIView):
             invoice = get_object_or_404(Invoice, id=invoice_id)
             invoice.payment_status = 'successful'
             invoice.save()
+            for order in invoice.order_items.all():
+                order.product.stock -= order.quantity
+                order.product.save()
             # TODO - Decrease product quantity
             # send_payment_success_email_task.delay(customer_email)
 

@@ -2,7 +2,7 @@ from django.db import models
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from store.models.product_models import Product
+# from store.models.product_models import Product
 
 class PromotionType(models.Model):
     name = models.CharField(max_length=255)
@@ -25,7 +25,7 @@ class PromotionalOffer(models.Model):
     is_scheduled = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
    
-    products = models.ManyToManyField(Product, 
+    products = models.ManyToManyField('store.Product', 
     related_name="promotional_offer_products",       
     through="ProductsOnPromotionalOffer",
 )
@@ -54,7 +54,7 @@ class PromotionalOffer(models.Model):
 
 class ProductsOnPromotionalOffer(models.Model):
     product = models.ForeignKey(
-        Product,
+        'store.Product',
         related_name="product_on_promotional_offer_product",
         on_delete=models.PROTECT,
     )

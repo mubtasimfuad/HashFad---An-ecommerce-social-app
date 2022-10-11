@@ -33,7 +33,7 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
         fields = ['token']
 
 class EmailActivationSerializer(serializers.Serializer):
-    activation_key = serializers.CharField()
+    activation_key = serializers.CharField(required=True)
 
     def validate_activation_key(self, activation_key):
         if not len(activation_key)==10:

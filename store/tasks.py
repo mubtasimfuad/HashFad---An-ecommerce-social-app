@@ -14,12 +14,12 @@ from .utils import format_html
 def offer_promotions(discount_percent,object_id):
      with transaction.atomic():
         promotional_offers = PromotionalOffer.products.through.objects.filter(promotion_id=object_id)
-        reduction = discount_percent / 100
+        reduction_ratio = discount_percent / 100
 
         for offer in promotional_offers:
             if offer.price_override == False:
                 price = offer.product.price
-                new_price = ceil(price - (price * Decimal(reduction)))
+                new_price = ceil(price - (price * Decimal(reduction_ratio)))
                 offer.promo_price = Decimal(new_price)
                 offer.save()
 
@@ -27,15 +27,16 @@ def offer_promotions(discount_percent,object_id):
 
 
 @shared_task()
-def delete_idle_cart(basket_id):
+def delete_idle_cart(basket_id=None):
     with transaction.atomic():
-        basket = Basket.objects.get(id = basket_id)
-        if basket:
-            current_date = datetime.now().date()
-            if basket.created_at.date()< current_date:
-                idol_duration = current_date-basket.created_at.date()
-                if idol_duration==timedelta(days=15):
-                    basket.delete() #deletes idle baskets after 15 days
+        if basket_id:
+            basket = Basket.objects.get(id = basket_id)
+            if basket:
+                current_date = datetime.now().date()
+                if basket.created_at.date()< current_date:
+                    idol_duration = current_date-basket.created_at.date()
+                    if idol_duration==timedelta(days=15):
+                        basket.delete() #deletes idle baskets after 15 days
                        
 
 @shared_task
@@ -52,7 +53,7 @@ def manage_promotions():
         promotional_offers = PromotionalOffer.objects.filter(is_scheduled=True)
 
         current_date = datetime.now().date()
-
+        print(current_date)
         for offer in promotional_offers:
             if offer.is_scheduled:
                 if offer.offer_end < current_date:
@@ -60,9 +61,9 @@ def manage_promotions():
                     offer.is_scheduled = False
                 else:
                     if offer.offer_end <= current_date:
-                        offer.is_active = True
-                    else:
                         offer.is_active = False
+                    else:
+                        offer.is_active = True
             offer.save()
 
 

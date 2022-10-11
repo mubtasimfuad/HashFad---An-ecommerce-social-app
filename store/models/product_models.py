@@ -1,9 +1,12 @@
+from itertools import product
+from math import ceil
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum,Q
 from phonenumber_field.modelfields import PhoneNumberField 
 from django.template.defaultfilters import slugify
 from django.conf import settings
 from store import pil
+from store.models import promotion_models 
 from store.models.user_models import Vendor, Customer
 from django.core.validators import MinValueValidator
 from uuid import uuid4
@@ -42,7 +45,7 @@ class Product(models.Model):
     slug            = models.SlugField(max_length=200, unique=True)
     description     = models.TextField(max_length=4000, blank=True)
     price           = models.DecimalField(max_digits=7, decimal_places=2)
-    featured_image  = models.ImageField(upload_to='photos/products', default='no.jpg')
+    featured_image  = models.ImageField(upload_to='photos/products/featured/', default= 'images.png')
     is_available    = models.BooleanField(default=True)
     category        = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
     created_at    = models.DateTimeField(auto_now_add=True)
@@ -74,7 +77,7 @@ CHOICES=[
 class ProductVariation(models.Model):
     
     product = models.ForeignKey('Product', related_name='variations', on_delete= models.CASCADE)
-    image   = models.ImageField(upload_to='photos/products', null =True)
+    image   = models.ImageField(upload_to='photos/products/variations/', default= 'images.png')
     stock   = models.PositiveIntegerField()
     added_price = models.DecimalField(max_digits=6,decimal_places=2,default=0)
     color = models.CharField(max_length=50,null = True, blank=True, default=None)
@@ -88,11 +91,23 @@ class ProductVariation(models.Model):
         
         return super().save(*args, **kwargs)
     @property
+    def price(self):
+        return (self.product.price + self.added_price)
+
+    @property
     def tax(self):
-        return (self.product.price + self.added_price)* Decimal(0.2)
+        return Decimal(0.02)
+       
     @property
     def price_after_add(self):
-        return self.product.price + self.added_price +self.tax
+        
+        promo =promotion_models.PromotionalOffer.products.through.objects.get(Q(promotion__is_active=True) & Q(product_id=self.product.id))
+        reduction_ratio = (promo.promotion.promo_reduction)/100
+        new_price = (self.price - (self.price * Decimal(reduction_ratio)))
+        return ceil(new_price+((new_price)* self.tax))
+
+        # except:
+        #     return ceil(self.price+((self.price* self.tax)))
 
 
     def __str__(self):
@@ -129,7 +144,7 @@ class Basket(models.Model):
 
     @property
     def grand_total(self):
-        sum([round((item.quantity * item.product.price_after_add),3) for item in self.items.all()])
+        sum([ceil((item.quantity * item.product.price_after_add)) for item in self.items.all()])
    
 class BasketItem(models.Model):
     basket = models.ForeignKey(

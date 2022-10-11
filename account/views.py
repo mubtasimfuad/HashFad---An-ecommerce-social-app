@@ -6,6 +6,9 @@ from account.permissions import IsAnonymousUser
 from account.serializers import EmailActivationSerializer, EmailVerificationSerializer, SignInSerializer, SignUpSerializer
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from store.models.product_models import Product, ProductVariation
 from .utils import Util
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
@@ -18,7 +21,7 @@ import os
 from datetime import datetime,timedelta
 from .utils import format_html
 # Create your views here.
-
+from django.db import transaction 
 
 
 class RegisterView(generics.GenericAPIView):
@@ -33,43 +36,45 @@ class RegisterView(generics.GenericAPIView):
         serializer.save()
 
         user_data = serializer.data
-        user = Account.objects.get(email=user_data["email"])
-        salt = '%0*d%0*d' % (8, random.randint(0, 99999999), 8, random.randint(0, 99999999))
-        activation_key = hashlib.md5((user.email+salt).encode("utf-8")).hexdigest()[:10]
-        invalid_at=datetime.now() +timedelta(days=7) 
-        ActivatorKey.objects.create(user=user,activation_key=activation_key,invalid_at=invalid_at)
+        with transaction.atomic():
+            user = Account.objects.get(email=user_data["email"])
+            salt = '%0*d%0*d' % (8, random.randint(0, 99999999), 8, random.randint(0, 99999999))
+            activation_key = hashlib.md5((user.email+salt).encode("utf-8")).hexdigest()[:10]
+            invalid_at=datetime.now() +timedelta(days=7) 
 
-        # token = RefreshToken.for_user(user).access_token
-        current_site = get_current_site(request).domain
-        relative_link = reverse('email-activate')
-        mailjet = Client(auth=(settings.MAILJET_API_KEY, settings.MAILJET_API_SECRET), version='v3.1')
+            ActivatorKey.objects.create(user=user,activation_key=activation_key,invalid_at=invalid_at)
 
-        link_to_submit = 'http://'+current_site+relative_link
-        absurl = 'http://'+current_site+relative_link+"?activation_key="+str(activation_key)
+            # token = RefreshToken.for_user(user).access_token
+            current_site = get_current_site(request).domain
+            relative_link = reverse('email_activate')
+            mailjet = Client(auth=(settings.MAILJET_API_KEY, settings.MAILJET_API_SECRET), version='v3.1')
 
-        email_body = ' Use the link below to verify your email \n'+absurl
-        body_html = format_html(user.first_name,activation_key,absurl,link_to_submit)
-        data = {
-        'Messages': [
-            {
-            "From": {
-                "Email": "hashfad.info@gmail.com",
-                "Name": "Hashfad"
-            },
-            "To": [
+            link_to_submit = 'http://'+current_site+relative_link
+            absurl = 'http://'+current_site+relative_link+"?activation_key="+str(activation_key)
+
+            email_body = ' Use the link below to verify your email \n'+absurl
+            body_html = format_html(user.first_name,activation_key,absurl,link_to_submit)
+            data = {
+            'Messages': [
                 {
-                "Email":  user.email,
-                "Name": user.first_name
+                "From": {
+                    "Email": "hashfad.info@gmail.com",
+                    "Name": "Hashfad"
+                },
+                "To": [
+                    {
+                    "Email":  user.email,
+                    "Name": user.first_name
+                    }
+                ],
+                "Subject": "Activate your hashfad account",
+                "TextPart": "Thanks for choosing us",
+                "HTMLPart": body_html,
+                "CustomID": f"Activation{user.id}"
                 }
-            ],
-            "Subject": "Activate your hashfad account",
-            "TextPart": "Thanks for choosing us",
-            "HTMLPart": body_html,
-            "CustomID": f"Activation{user.id}"
+            ]
             }
-        ]
-        }
-        result = mailjet.send.create(data=data)
+            result = mailjet.send.create(data=data)
         print (result.status_code)
         print (result.json())
         
@@ -98,9 +103,10 @@ class RegisterView(generics.GenericAPIView):
 
 
 
-class ActivateEmail(views.APIView):
-    http_method_names = ['get', 'post']
+class ActivateEmail(generics.GenericAPIView):
+    http_method_names = ['get', 'post','head']
     serializer_class = EmailActivationSerializer
+ 
     def post(self, request):
         user = request.data
         serializer = self.serializer_class(data=user)
@@ -127,8 +133,16 @@ class ActivateEmail(views.APIView):
             return Response({'email': "Succesfully Activated"}, status=status.HTTP_202_ACCEPTED)
         except:
             return Response({'key': "Invalid Key"}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
+    
+    @swagger_auto_schema(
+    manual_parameters=[openapi.Parameter('activation_key', openapi.IN_QUERY, description="activation link concated with the url through email", type=openapi.TYPE_STRING)]
+    )
     def get(self, request):
+        """
+        param1 -- activation_key
+
+        """ 
+     
         activation_key = request.GET.get('activation_key')
         if not activation_key ==None or "":
                 
@@ -164,32 +178,24 @@ class SignInAPIView(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class TestAPIView(APIView):
+     import random
      def post(self, request, *args, **kwargs):
-    
-        api_key = '07ae3c77e4efbdfe71fe1e3343d9dfd6'
-        api_secret = '1cb2736d6df186f2e9252f7bb7adda1b'
-        mailjet = Client(auth=(api_key, api_secret), version='v3.1')
-        data = {
-        'Messages': [
-            {
-            "From": {
-                "Email": "hashfad.info@gmail.com",
-                "Name": "Hashfad"
-            },
-            "To": [
-                {
-                "Email": "mubtasimfuadayon@gmail.com",
-                "Name": "Mubtasim"
-                }
-            ],
-            "Subject": "Greetings from Mailjet.",
-            "TextPart": "My first Mailjet email",
-            "HTMLPart": "<h3>Dear passenger 1, welcome to <a href='https://www.mailjet.com/'>Mailjet</a>!</h3><br />May the delivery force be with you!",
-            "CustomID": "AppGettingStartedTest"
-            }
-        ]
-        }
-        result = mailjet.send.create(data=data)
-        print (result.status_code)
-        print (result.json())
-        return Response({'error': "Invalid Token "}, status=status.HTTP_202_ACCEPTED)
+        product_list=[]
+        size=['32','34','36','38','40','42','44','46','default']
+        
+        for item in range(50):
+           
+            # print(item.product.product.title , item.product.price_after_add)
+            product_obj=ProductVariation(
+                product_id = random.randint(1, 50),
+                stock=random.randint(1, 10),
+                color = "#23663"+str(random.randint(item, 50)),
+                size = size[random.randint(0,8)],
+                added_price = 20+item,
+                    )
+            product_list.append(product_obj)
+            
+        # basket_object_list.append(order_object)
+        ProductVariation.objects.bulk_create(product_list)
+        
+        return Response({'success': "Created"}, status=status.HTTP_202_ACCEPTED)

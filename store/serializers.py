@@ -1,7 +1,8 @@
 
 from decimal import Decimal
 from itertools import product
-
+from math import ceil
+from django.db.models import Q
 from store.models.logistic_models import DeliveryTask
 from store.tasks import delete_idle_cart, offer_promotions,manage_promotions
 from . import pil
@@ -34,6 +35,26 @@ class ProductVariationSerializer(serializers.ModelSerializer):
         if attrs['color'] == "":
             attrs['color']= pil._get_image_field_color(attrs)
         return super().validate(attrs)
+    # def save(self, **kwargs):
+    #     product_pk = self.context['product_pk']
+    #     image = self.validated_data['image']
+    #     stock = self.validated_data['stock']
+    #     added_price = self.validated_data['added_price']
+    #     added_price = self.validated_data['added_price']
+    #     color = self.validated_data['color']
+    #     size = self.validated_data['size']
+    #     if not Product.objects.filter(id=product_pk).exists():
+    #         raise serializers.ValidationError({"product_id":"No Such Product Found"})
+
+    #     try:
+    #         variation =ProductVariation.objects.get(product_id=product_pk)
+    #         product_on_promotion.price_override=price_override
+    #         product_on_promotion.promo_price=promo_price
+    #         product_on_promotion.save()
+    #     except:
+    #         product_on_promotion = ProductsOnPromotionalOffer.objects.create(promotion_id=promotion_id, product_id=product_id, price_override=price_override,promo_price=promo_price)
+    #     self.instance = product_on_promotion
+    #     return self.instance
 
     # def create(self, validated_data):
     #     if validated_data['color'] == "":
@@ -52,6 +73,9 @@ class ProductSerializer(serializers.ModelSerializer):
     variation = ProductVariationSerializer(source='variations',
                                   many=True, read_only=True)
     category_id = serializers.IntegerField()
+    stock = serializers.IntegerField(read_only=True)
+    total_variation = serializers.IntegerField(read_only=True)
+    promotion_price = serializers.SerializerMethodField()
     class Meta:
         model = Product
         fields = [
@@ -60,6 +84,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'title', 
             'description', 
             'price', 
+            'promotion_price',
             'featured_image', 
             'is_available',
             'category_id',
@@ -68,9 +93,13 @@ class ProductSerializer(serializers.ModelSerializer):
             'slug',
             'variation',
             ]
+    def get_promotion_price(self,object):
+        try:
+            promo =PromotionalOffer.products.through.objects.get(Q(promotion__is_active=True) & Q(product_id=object.id))
+            return promo.promo_price
+        except:
+            return None
     
-    stock = serializers.IntegerField(read_only=True)
-    total_variation = serializers.IntegerField(read_only=True)
     read_only_fields = ["vendor_id"]
 
     def validate(self, attrs):
@@ -232,7 +261,7 @@ class BasketItemSerializer(serializers.ModelSerializer):
     product = ProductVariationCartSerializer(read_only=True)
 
     def get_total_price(self, object):
-        return round(object.quantity * Decimal(object.product.price_after_add),3)
+        return ceil(object.quantity * Decimal(object.product.price_after_add))
 
     class Meta:
         model = BasketItem
@@ -250,7 +279,7 @@ class BasketSerializer(serializers.ModelSerializer):
     grand_total = serializers.SerializerMethodField(read_only=True)
     
     def get_grand_total(self,object:Basket):
-        return sum([round((item.quantity * item.product.price_after_add),3) for item in object.items.all()])
+        return sum([ceil((item.quantity * item.product.price_after_add)) for item in object.items.all()])
     class Meta:
         model= Basket
         fields = [
