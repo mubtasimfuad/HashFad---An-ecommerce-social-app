@@ -182,45 +182,46 @@ class OrderViewSet(ModelViewSet):
 class PayStripe(APIView):
     def post(self, request, *args, **kwargs):
         invoice = Invoice.objects.get(id=self.kwargs.get("order_pk",None))
-        
-        order_items = []
+        if  invoice.payment_status =="successful":
+            order_items = []
 
-        for order_item in invoice.order_items.all():
-            product:ProductVariation = order_item.product
-            quantity = order_item.quantity
+            for order_item in invoice.order_items.all():
+                product:ProductVariation = order_item.product
+                quantity = order_item.quantity
 
-            data = {
-                'price_data': {
-                    'currency': 'bdt',
-                    'unit_amount_decimal': ceil((product.price_after_add))*100,
-                    'product_data': {
-                        'name': product.product.title,
-                        'description': product.product.description+" "+f"Color: {product.color}"+" "+f"Size: {product.size}"+" ",
-                        'images':['https://static-01.daraz.com.bd/p/6b5147870171629254071485f4e65979.jpg'],
-                        }
-                },
-                'quantity': quantity
-            }
+                data = {
+                    'price_data': {
+                        'currency': 'bdt',
+                        'unit_amount_decimal': ceil((product.price_after_add))*100,
+                        'product_data': {
+                            'name': product.product.title,
+                            'description': product.product.description+" "+f"Color: {product.color}"+" "+f"Size: {product.size}"+" ",
+                            'images':['https://static-01.daraz.com.bd/p/6b5147870171629254071485f4e65979.jpg'],
+                            }
+                    },
+                    'quantity': quantity
+                }
 
-            order_items.append(data)
+                order_items.append(data)
 
-        # serializer = CustomerSerializer(customer)
-        
-        try:
-            checkout_session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=order_items,
-                metadata={
-                    "invoice_id": invoice.id
-                },
-                mode='payment',
-                success_url='http://127.0.0.1:8000/backend/api/v1/store/orders/'+ '?success=true',
-                cancel_url='http://127.0.0.1:8000/backend/api/v1/store/orders/' + '?canceled=true',
-            )
-            return Response({'sessionId': checkout_session['id'],"redirect_url": checkout_session.url}, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({'msg':'something went wrong while creating stripe session','error':str(e)}, status=500)
-
+            # serializer = CustomerSerializer(customer)
+            
+            try:
+                checkout_session = stripe.checkout.Session.create(
+                    payment_method_types=['card'],
+                    line_items=order_items,
+                    metadata={
+                        "invoice_id": invoice.id
+                    },
+                    mode='payment',
+                    success_url='http://127.0.0.1:8000/backend/api/v1/store/orders/'+ '?success=true',
+                    cancel_url='http://127.0.0.1:8000/backend/api/v1/store/orders/' + '?canceled=true',
+                )
+                return Response({'sessionId': checkout_session['id'],"redirect_url": checkout_session.url}, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({'msg':'something went wrong while creating stripe session','error':str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'payment':'Payment Already Completed'}, status=status.HTTP_208_ALREADY_REPORTED)
 
 
 class StripeWebhookAPIView(APIView):

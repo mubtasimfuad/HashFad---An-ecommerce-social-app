@@ -111,7 +111,7 @@ class ProductVariation(models.Model):
 
 
     def __str__(self):
-        return self.product.title or ""
+        return str(self.id) or ""
 
 
 class ReviewRating(models.Model):

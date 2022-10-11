@@ -19,6 +19,7 @@ redis = "*"
 celery = "*"
 flower = "*"
 psycopg2-binary = "*"
+django-environ = "*"
 
 [dev-packages]
 

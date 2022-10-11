@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import environ
+import os
 from pathlib import Path
 from datetime import timedelta
 from django.core.mail.backends.console import EmailBackend
@@ -19,15 +20,21 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-thx9o4$=t&6*j^*1^t9ekx8i9x%&tuceuhf1)3j*8$6#4idnn!"
+SECRET_KEY = env('SECRET_KEY')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -103,9 +110,9 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "hashfad",
-        "USER": "mubtasim",
-        "PASSWORD": "8160",
+        "NAME": env('DB_NAME'),
+        "USER": env('DB_USER'),
+        "PASSWORD": env('DB_PASS'),
         "HOST": "localhost",
     }
 }
@@ -190,16 +197,15 @@ AUTH_USER_MODEL = 'account.Account'
 # EMAIL_PORT = 587
 EMAIL_HOST = 'in-v3.mailjet.com'
 
-EMAIL_HOST_USER = "hashfad.info@gmail.com"
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = "exjwkxhkxogiarni"
 EMAIL_BACKEND = 'django_mailjet.backends.MailjetBackend'
-MAILJET_API_KEY = '07ae3c77e4efbdfe71fe1e3343d9dfd6'
-MAILJET_API_SECRET = '1cb2736d6df186f2e9252f7bb7adda1b'
+MAILJET_API_KEY = env('MAILJET_API_KEY')
+MAILJET_API_SECRET = env('MAILJET_API_SECRET')
 
-STRIPE_PUBLIC_KEY='pk_test_51LmzlYDoxGFktomFrqINwZExyX6Pzo7u16eBT70cPbpc92oDAmVAFkfm6hTDgpGDQOgMJQE28NckD4gF3FNTREOV0073rSZm7w'
-STRIPE_SECRET_KEY='sk_test_51LmzlYDoxGFktomF3Y0x7wrGSvlyEiW6GQuNxgVIlaFRSxS5JN7K3MrTltRV1NJbbZfpgedRS5xtogvm983Er1yu008sE7iLhv'
-STRIPE_WEBHOOK_SECRET='whsec_f64a0577b21139e882475dca899a90280af6c375067c83fdb946f6ff5bccc867'
-
+STRIPE_PUBLIC_KEY=env('STRIPE_PUBLIC_KEY')
+STRIPE_SECRET_KEY=env('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET=env('STRIPE_WEBHOOK_SECRET')
 
 
 CELERY_BROKER_URL = 'redis://localhost:6379/1'
