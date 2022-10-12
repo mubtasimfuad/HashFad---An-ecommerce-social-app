@@ -31,7 +31,7 @@ promotion_router=  routers.NestedDefaultRouter(router, r'promotional-offers', lo
 promotion_router.register('products',promotion_views.ProductPromotionalOfferViewSet,basename="products_on_promotion")
 
 urlpatterns = [
-    path('orders/<int:order_pk>/pay',
+    path('orders/<int:invoice_pk>/pay',
          product_views.PayStripe.as_view(), name='checkout_session'),
     path('orders/stripe/webhook', product_views.StripeWebhookAPIView.as_view(), name='stripe_webhook'),
     path('', include(router.urls)),

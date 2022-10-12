@@ -39,4 +39,6 @@ def assign_order(sender,**kwargs):
             .annotate(tasks_count=Count('tasks')).order_by('tasks_count').order_by('?').first()
     for order in instance.order_items.all():
         DeliveryTask.objects.create(agent=agent,delivery_time=delivery_date,order=order)
+        order.delivery_status="processing"
+        order.save()
     

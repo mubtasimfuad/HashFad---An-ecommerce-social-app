@@ -436,7 +436,7 @@ class DeliveryTaskSerializer(serializers.ModelSerializer):
              ]
 
 class DeliveryTaskUpdateSerializer(serializers.ModelSerializer):
-     class Meta:
+    class Meta:
         model = DeliveryTask
         fields = [
             "id",
@@ -445,8 +445,9 @@ class DeliveryTaskUpdateSerializer(serializers.ModelSerializer):
             "isDelivered",
             "remarks",
             ]
+    
 
-# TODO celery task for attempts
+# TODO celery task for attempts mail
 
 class ProductsAddToPromotionSerializer(serializers.ModelSerializer):
     class Meta:

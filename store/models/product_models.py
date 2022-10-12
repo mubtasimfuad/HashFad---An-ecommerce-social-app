@@ -100,14 +100,15 @@ class ProductVariation(models.Model):
        
     @property
     def price_after_add(self):
-        
-        promo =promotion_models.PromotionalOffer.products.through.objects.get(Q(promotion__is_active=True) & Q(product_id=self.product.id))
-        reduction_ratio = (promo.promotion.promo_reduction)/100
-        new_price = (self.price - (self.price * Decimal(reduction_ratio)))
-        return ceil(new_price+((new_price)* self.tax))
+        try:
+            
+            promo =promotion_models.PromotionalOffer.products.through.objects.get(Q(promotion__is_active=True) & Q(product_id=self.product.id))
+            reduction_ratio = (promo.promotion.promo_reduction)/100
+            new_price = (self.price - (self.price * Decimal(reduction_ratio)))
+            return ceil(new_price+((new_price)* self.tax))
 
-        # except:
-        #     return ceil(self.price+((self.price* self.tax)))
+        except:
+            return ceil(self.price+((self.price* self.tax)))
 
 
     def __str__(self):
@@ -181,28 +182,16 @@ class Invoice(models.Model):
 
 
 class Order(models.Model):
-    PENDING_PAYMENT_STATUS = 'pending'
-    SUCCESSFUL_PAYMENT_STATUS = 'successful'
-    FAILED_PAYMENT_STATUS = 'failed'
-    
+  
     PENDING_DELIVERY_STATUS = 'pending'
     PROCESSING_DELIVERY_STATUS = 'processing'
     SHIPPED_DELIVERY_STATUS = 'shipped'
     DELIVERED_DELIVERY_STATUS = 'delivered'
     REUTRNED_DELIVERY_STATUS = 'returned'
 
-    CASH_ON_DELIVERY ="cod"
-    ONLINE_PAYMENT = "op"
     #############################
-    PAYMENT_STATUS_CHOICES = [
-        (PENDING_PAYMENT_STATUS, 'Pending'),
-        (SUCCESSFUL_PAYMENT_STATUS, 'Successful'),
-        (FAILED_PAYMENT_STATUS, 'Failed'),
-    ]
-    PAYMENT_METHOD_CHOICES= [
-        (CASH_ON_DELIVERY, 'Cash On Delivery'),
-        (ONLINE_PAYMENT, 'Online Payment'),
-        ]
+   
+    
         
     DELIVERY_STATUS_CHOICES=[
         (PENDING_DELIVERY_STATUS, 'Pending'),

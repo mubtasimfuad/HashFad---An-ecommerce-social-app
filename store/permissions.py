@@ -1,5 +1,7 @@
+from itertools import product
 from rest_framework import permissions
 from account.models import Account
+from store.models.product_models import Order
 
 from store.models.user_models import Customer, Vendor
 
@@ -11,8 +13,8 @@ class IsVendorOrReadOnly(permissions.BasePermission):
         if view.action == "create":
             return  request.user.is_authenticated and request.user.user_type == "vendor"
                
-        else:
-            return True
+        # else:
+        #     return True
 class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if (request.method in permissions.SAFE_METHODS):
@@ -41,12 +43,32 @@ class IsProductVendorOrAdmin(permissions.BasePermission):
                 return True
 class IsAuthor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        if view.action == "retrieve":
+        
+    
+        if view.action == "retrieve" :
             return True
         if view.action in ['update', 'partial_update','destroy']:
             
             if request.user.id == obj.user.id:
                 return True
+class IsVerifiedPurchase(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if (request.method in permissions.SAFE_METHODS):
+            return True
+            
+        if view.action =="create":
+            if Order.objects.filter(delivery_status="delivered",\
+                product__product__pk=view.kwargs['product_pk'],invoice__customer__user__id=request.user.id).exists():
+                return True 
+    
+        
+                
+        
+        
+                
+            
+    
+
 class IsAnonymousUser(permissions.BasePermission):
     def has_permission(self, request, view):
         if view.action == "create":

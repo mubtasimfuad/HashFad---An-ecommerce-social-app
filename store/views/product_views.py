@@ -5,6 +5,7 @@ from django.db.models import Sum, Count
 from django.db.models import Q
 from rest_framework.decorators import action
 from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.filters import SearchFilter,OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,7 +20,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
 from store.models.user_models import Customer, Vendor
 from store.paginations import ListPagination
-from store.permissions import IsAdminOrReadOnly, IsAnonymousUser, IsAuthor, IsAuthorizedCustomer, IsCustomerOrAdmin, IsProductVendorOrAdmin, IsVariationVendor, IsVendorOrReadOnly
+from store.permissions import IsAdminOrReadOnly, IsAnonymousUser, IsAuthor, IsAuthorizedCustomer, IsCustomerOrAdmin, IsProductVendorOrAdmin, IsVariationVendor, IsVendorOrReadOnly, IsVerifiedPurchase
 from store.serializers import BasketItemAdditionSerializer, BasketItemSerializer, BasketItemUpdateSerializer, BasketToOrderSerializer, CategorySerializer, InvoiceSerializer, OrderSerializer, ProductSerializer, ProductVariationSerializer, QuerySerializer, ReviewRatingSerializer, BasketSerializer
 import stripe
  #@api_view()
@@ -32,13 +33,20 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [IsProductVendorOrAdmin,IsVendorOrReadOnly]
+    # permission_classes = [IsProductVendorOrAdmin,IsVendorOrReadOnly]
     pagination_class=ListPagination
     filter_backends = [DjangoFilterBackend,SearchFilter,OrderingFilter]
     # filterset_fields = ['category_id', 'vendor','price']
     filterset_class = CustomProductFilter
     search_fields = ['title','description','vendor__store_name','category__title']
     ordering_fields = ['price']
+
+    def get_permissions(self):
+        if self.action in ['retrieve','update', 'partial_update','destroy']:
+            self.permission_classes= [IsProductVendorOrAdmin,]
+        else:
+         self.permission_classes= [IsVendorOrReadOnly,]
+        return super().get_permissions() 
 
     def get_queryset(self):
         queryset = Product.objects.all().select_related('category').prefetch_related('variations').annotate(stock = 
@@ -62,6 +70,12 @@ class VariationViewSet(ModelViewSet):
     def get_serializer_context(self):
          return {'product_pk':self.kwargs.get('product_pk',None),'request': self.request }
     
+    def get_permissions(self):
+        if self.action in ['retrieve','update', 'partial_update','destroy']:
+            self.permission_classes= [IsVariationVendor,]
+        else:
+         self.permission_classes= [IsVendorOrReadOnly,]
+        return super().get_permissions() 
 
     def get_queryset(self):
         queryset =  ProductVariation.objects.filter(product_id = self.kwargs.get('product_pk',None)).select_related('product')
@@ -77,8 +91,16 @@ class CategoryViewSet(ModelViewSet):
 
 class ReviewRatingViewSet(ModelViewSet):
     serializer_class = ReviewRatingSerializer
-    permission_classes=[IsAuthenticatedOrReadOnly, IsAuthor]
+    # permission_classes=[IsAuthor]
     pagination_class=ListPagination
+
+    def get_permissions(self):
+        if self.action in ['retrieve','update', 'partial_update','destroy']:
+            self.permission_classes= [IsAuthor,]
+        else:
+         self.permission_classes= [IsVerifiedPurchase,]
+        return super().get_permissions() 
+
     
 
     def get_serializer_context(self):
@@ -93,8 +115,14 @@ class ReviewRatingViewSet(ModelViewSet):
    
 class QueryViewSet(ModelViewSet):
     serializer_class = QuerySerializer
-    permission_classes=[IsAuthenticatedOrReadOnly, IsAuthor]
     pagination_class=ListPagination
+    
+    def get_permissions(self):
+        if self.action in ['retrieve','update', 'partial_update','destroy']:
+            self.permission_classes= [IsAuthor,]
+        else:
+         self.permission_classes= [IsAuthenticatedOrReadOnly,]
+        return super().get_permissions() 
 
 
     def get_serializer_context(self):
@@ -110,7 +138,6 @@ class QueryViewSet(ModelViewSet):
 class BasketViewSet(CreateModelMixin,RetrieveModelMixin,DestroyModelMixin, GenericViewSet):
     serializer_class = BasketSerializer
     queryset = Basket.objects.all().prefetch_related('items__product__product')
-    # permission_classes=[IsCustomerOrAdmin]
    
 
     
@@ -123,7 +150,6 @@ class BasketItemViewSet(ModelViewSet):
     }
 
     default_serializer_class = BasketItemSerializer
-    # permission_classes=[ IsCustomerOrAdmin]
     
     def get_serializer_class(self):
         return self.serializer_classes.get(self.request.method, self.default_serializer_class)
@@ -140,7 +166,7 @@ class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes=[IsAuthenticated,IsCustomerOrAdmin]
 
-
+  
     serializer_classes = {
         'POST': BasketToOrderSerializer,
         
@@ -153,6 +179,14 @@ class OrderViewSet(ModelViewSet):
             return BasketToOrderSerializer
         return self.default_serializer_class
 
+    def get_permissions(self):
+        if self.action in ['create','retrieve','update', 'partial_update','destroy']:
+            self.permission_classes= [IsCustomerOrAdmin,]
+        else:
+         self.permission_classes= [IsAuthenticated,]
+        return super().get_permissions() 
+
+    
     def create(self, request, *args, **kwargs):
         serializer = BasketToOrderSerializer(data=request.data, context= {'user_id': self.request.user.id, "request":self.request })
         serializer.is_valid(raise_exception=True)
@@ -169,20 +203,21 @@ class OrderViewSet(ModelViewSet):
         if user.is_staff:
             return Invoice.objects.all()
         else:
-            try:
-                customer = Customer.objects.get(user_id=user.id).first()
-                return Invoice.objects.filter(customer_id=customer.id)
-            except:
-                 return None
+            customer = Customer.objects.get(user_id=user.id)
+            return Invoice.objects.filter(customer_id=customer.id)
+           
         # if user.user_type == "vendor":
         #     vendor = Vendor.objects.get(user_id=user.id)
         #     return Invoice.objects.filter(product__product__vendor__id=vendor.id)
     # @action(detail=True,url_path='pay', methods=["POST"], permission_classes=[IsAuthenticated])
 
 class PayStripe(APIView):
+    
     def post(self, request, *args, **kwargs):
-        invoice = Invoice.objects.get(id=self.kwargs.get("order_pk",None))
-        if  invoice.payment_status =="successful":
+        invoice = Invoice.objects.get(id=self.kwargs.get("invoice_pk",None))
+        current_site = 'http://'+get_current_site(request).domain
+
+        if not invoice.payment_method=="cod" or not invoice.payment_status =="successful":
             order_items = []
 
             for order_item in invoice.order_items.all():
@@ -214,14 +249,14 @@ class PayStripe(APIView):
                         "invoice_id": invoice.id
                     },
                     mode='payment',
-                    success_url='http://127.0.0.1:8000/backend/api/v1/store/orders/'+ '?success=true',
-                    cancel_url='http://127.0.0.1:8000/backend/api/v1/store/orders/' + '?canceled=true',
+                    success_url=current_site+'backend/api/v1/store/orders/'+ '?success=true',
+                    cancel_url=current_site+'backend/api/v1/store/orders/' + '?canceled=true',
                 )
                 return Response({'sessionId': checkout_session['id'],"redirect_url": checkout_session.url}, status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response({'msg':'something went wrong while creating stripe session','error':str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'payment':'Payment Already Completed'}, status=status.HTTP_208_ALREADY_REPORTED)
+            return Response({'payment':'Payment Already Completed/ Will be paid through Cash On Delivery'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class StripeWebhookAPIView(APIView):

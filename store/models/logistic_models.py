@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models,transaction
 from store.models.product_models import Order
 from store.models.user_models import DeliveryAgent
 from datetime import datetime
@@ -15,9 +15,16 @@ class DeliveryTask(models.Model):
     remarks = models.TextField(null=True,blank=True)
 
     def save(self,*args, **kwargs) -> None:
+        
         if self.isDelivered:
             self.delivered_at = datetime.now()
             self.isReturned =False
+            self.order.delivery_status='delivered'
+        if self.isReturned:
+            self.order.delivery_status='returned'
+
+        self.order.save()
+
         return super().save(*args, **kwargs)
  
     def __str__(self) -> str:
