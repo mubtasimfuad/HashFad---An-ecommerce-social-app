@@ -476,11 +476,14 @@ class ProductPromotionalOfferSerializer(serializers.ModelSerializer):
         promotion_id = self.context['promotion_pk']
         product_id = self.validated_data['product_id']
         promo_price = self.validated_data['promo_price']
+        price_override = self.validated_data['price_override']
+
         if not Product.objects.filter(id=product_id).exists():
             raise serializers.ValidationError({"product_id":"No Such Product Found"})
         
+        if ProductsOnPromotionalOffer.objects.filter(product_id=product_id,promotion__is_active=True).exists():
+            raise serializers.ValidationError("Product can't be part of multiple active promotional offer")
 
-        price_override = self.validated_data['price_override']
         try:
             product_on_promotion =ProductsOnPromotionalOffer.objects.get(promotion_id=promotion_id, product_id=product_id)
             product_on_promotion.price_override=price_override
