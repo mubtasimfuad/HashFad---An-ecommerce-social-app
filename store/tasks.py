@@ -60,10 +60,10 @@ def manage_promotions():
                     offer.is_active = False
                     offer.is_scheduled = False
                 else:
-                    if offer.offer_end <= current_date:
-                        offer.is_active = False
-                    else:
+                    if offer.offer_start <= current_date:
                         offer.is_active = True
+                    else:
+                        offer.is_active = False
             offer.save()
 
 

@@ -67,6 +67,6 @@ class SignInSerializer(serializers.ModelSerializer):
             'tokens': user.tokens,
         }
 
-        return attrs
+        # return attrs
 
 
